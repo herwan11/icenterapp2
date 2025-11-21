@@ -1,0 +1,52 @@
+[07-Aug-2025 15:17:11 Asia/Jakarta] PHP Warning:  mysqli::__construct(): (HY000/1044): Access denied for user 'icey4741_admin'@'localhost' to database 'icey4741_icenter' in /home/icey4741/public_html/app/includes/db.php on line 11
+[07-Aug-2025 15:21:45 Asia/Jakarta] PHP Warning:  mysqli::__construct(): (HY000/1044): Access denied for user 'icey4741_admin'@'localhost' to database 'icey4741_icenter' in /home/icey4741/public_html/app/includes/db.php on line 11
+[07-Aug-2025 15:21:46 Asia/Jakarta] PHP Warning:  mysqli::__construct(): (HY000/1044): Access denied for user 'icey4741_admin'@'localhost' to database 'icey4741_icenter' in /home/icey4741/public_html/app/includes/db.php on line 11
+[07-Aug-2025 19:49:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 19:49:25 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 19:49:30 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 19:49:32 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 19:49:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 19:49:39 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 20:00:06 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 20:00:13 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 20:00:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[07-Aug-2025 20:01:52 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/repair_dashboard.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/repair_dashboard.php on line 17
+[30-Aug-2025 18:13:27 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:29 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:30 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:52 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:53 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:54 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:55 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:55 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[30-Aug-2025 18:13:56 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
