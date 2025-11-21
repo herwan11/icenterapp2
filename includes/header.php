@@ -102,7 +102,7 @@ if ($result_counts) {
                 </div>
 
                 <!-- Menu Customers -->
-                <a href="#" class="nav-link"><i class="fas fa-users fa-fw"></i> <span>Customers</span></a>
+                <a href="customers.php" class="nav-link"><i class="fas fa-users fa-fw"></i> <span>Customers</span></a>
 
 
                 <!-- ====================================================== -->
@@ -155,4 +155,3 @@ if ($result_counts) {
 
             <!-- Konten Dinamis akan dimuat di sini -->
             <main class="main-content">
-

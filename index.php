@@ -8,6 +8,15 @@ require_once 'includes/header.php';
 setlocale(LC_TIME, 'id_ID.UTF-8', 'Indonesian_Indonesia.1252');
 $bulan_tahun = ucwords(strftime('%B %Y')); // Contoh: Agustus 2025
 
+// --- 1. Logika Ambil Saldo Kas ---
+$saldo_kas_saat_ini = 0;
+// Harap pastikan Anda sudah menjalankan 'perbaikan_kas.sql' untuk menambahkan kolom saldo_terakhir
+$result_saldo = $conn->query("SELECT saldo_terakhir FROM transaksi_kas ORDER BY id DESC LIMIT 1");
+if ($result_saldo && $result_saldo->num_rows > 0) {
+    $saldo_kas_saat_ini = $result_saldo->fetch_assoc()['saldo_terakhir'];
+}
+// ------------------------------------
+
 // --- Data Placeholder (Nanti diganti dengan query asli) ---
 $data_laporan = [
     "Service" => ["laba" => 5500000, "pengeluaran" => 0],
@@ -77,6 +86,25 @@ $profit = $total_laba - $total_pengeluaran;
 
     <!-- Kolom Kanan (Ringkasan) -->
     <aside class="right-column">
+        
+        <!-- === KARTU BARU: Saldo Kas Saat Ini === -->
+        <div class="summary-card glass-effect" style="border-left: 5px solid var(--accent-primary);">
+            <div class="summary-header">
+                <h3 class="summary-title" style="margin-bottom: 0;">Total Kas Toko</h3>
+                <a href="kas.php" class="btn btn-tertiary">Detail <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="summary-total" style="padding-top: 16px; border-top: none;">
+                <div class="summary-icon" style="background-color: var(--accent-primary);">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="summary-text">
+                    <p>SALDO SAAT INI</p>
+                    <span style="font-size: 24px;">Rp <?php echo number_format($saldo_kas_saat_ini, 0, ',', '.'); ?></span>
+                </div>
+            </div>
+        </div>
+        <!-- ===================================== -->
+
         <!-- Supplier Card -->
         <div class="summary-card glass-effect">
             <h3 class="summary-title">Supplier</h3>
@@ -151,4 +179,3 @@ $profit = $total_laba - $total_pengeluaran;
 // Sertakan footer halaman
 require_once 'includes/footer.php';
 ?>
-

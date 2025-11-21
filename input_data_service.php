@@ -22,16 +22,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
         $durasi_garansi_val = $_POST['durasi_garansi_val'];
         $durasi_garansi_unit = $_POST['durasi_garansi_unit'];
         $durasi_garansi = $durasi_garansi_val . ' ' . $durasi_garansi_unit;
-        $sub_total = $_POST['sub_total'];
+        
+        // PERUBAHAN: Sub total diset ke 0 karena input dihilangkan dari form
+        $sub_total = 0; 
+        
         $uang_muka = $_POST['uang_muka'];
         $metode_pembayaran = $_POST['metode_pembayaran'];
         
-        $status_pembayaran = ($uang_muka >= $sub_total) ? 'Lunas' : 'Belum Lunas';
+        $status_pembayaran = ($uang_muka >= $sub_total && $sub_total > 0) ? 'Lunas' : 'Belum Lunas';
 
         $sql_service = "INSERT INTO service (invoice, kasir_id, merek_hp, tipe_hp, imei_sn, kerusakan, kelengkapan, teknisi_id, customer_id, garansi, keterangan, durasi_garansi, sub_total, uang_muka, metode_pembayaran, status_pembayaran) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt_service = $conn->prepare($sql_service);
-        // Customer ID (customer_id) sekarang berelasi dengan tabel pelanggan, bukan customers
-        // Pastikan tipe data di bind_param sesuai
         $stmt_service->bind_param("sisssssiisssddss", $invoice, $kasir_id, $merek_hp, $tipe_hp, $imei_sn, $kerusakan, $kelengkapan, $teknisi_id, $customer_id, $garansi, $keterangan, $durasi_garansi, $sub_total, $uang_muka, $metode_pembayaran, $status_pembayaran);
         
         if ($stmt_service->execute()) {
@@ -46,7 +47,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
 }
 
 // --- Ambil Data untuk Dropdown ---
-// Mengambil data dari tabel 'pelanggan'
 $customers = [];
 $result_cust = $conn->query("SELECT id, nama, no_hp, alamat, keluhan FROM pelanggan ORDER BY nama ASC");
 while($row = $result_cust->fetch_assoc()){ $customers[] = $row; }
@@ -143,7 +143,9 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                         <div class="form-group"><label>Untuk Klaim Garansi</label><div class="radio-group"><input type="radio" id="garansi_yes" name="garansi" value="ya"><label for="garansi_yes">Yes</label><input type="radio" id="garansi_no" name="garansi" value="tidak" checked><label for="garansi_no">No</label></div></div>
                         <div class="form-group"><label>Deskripsi (Keterangan)</label><textarea name="keterangan" rows="2"></textarea></div>
                         <div class="form-group"><label>Durasi Garansi</label><div class="input-group"><input type="number" name="durasi_garansi_val" value="0" class="form-control"><select name="durasi_garansi_unit" class="form-control"><option>Hari</option><option>Minggu</option><option>Bulan</option><option>Tahun</option></select></div></div>
-                        <div class="form-group"><label>Sub Total *</label><input type="number" name="sub_total" id="sub_total" value="0" required></div>
+                        
+                        <!-- PERUBAHAN: Input Sub Total DIHILANGKAN -->
+                        
                         <div class="form-group"><label>Uang Muka</label><input type="number" name="uang_muka" value="0"></div>
                         <div class="form-group"><label>Payment</label><select name="metode_pembayaran"><option value="cash">Cash</option><option value="credit">Credit</option></select></div>
                     </div>
@@ -179,7 +181,6 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
     </div>
 </div>
 
-
 <?php require_once 'includes/footer.php'; ?>
 
 <!-- Skrip JavaScript -->
@@ -194,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         customerAlamat.value = selectedOption.getAttribute('data-alamat') || '';
         customerKontak.value = selectedOption.getAttribute('data-kontak') || '';
-        kerusakanTextarea.value = selectedOption.getAttribute('data-keluhan') || ''; // Otomatis isi keluhan
+        kerusakanTextarea.value = selectedOption.getAttribute('data-keluhan') || ''; 
     });
 
     // --- Logika untuk Modal Customer ---
@@ -216,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('add_customer.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nama, kontak, alamat, keluhan }) // Kirim keluhan
+            body: JSON.stringify({ nama, kontak, alamat, keluhan }) 
         })
         .then(response => response.json())
         .then(data => {
@@ -224,10 +225,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const newOption = new Option(data.customer.nama, data.customer.id, true, true);
                 newOption.setAttribute('data-alamat', data.customer.alamat);
                 newOption.setAttribute('data-kontak', data.customer.kontak);
-                newOption.setAttribute('data-keluhan', data.customer.keluhan); // Tambahkan data keluhan
+                newOption.setAttribute('data-keluhan', data.customer.keluhan);
                 customerSelect.appendChild(newOption);
                 
-                // Trigger change event untuk mengisi semua field
+                // Trigger change event
                 customerSelect.dispatchEvent(new Event('change'));
 
                 modal.style.display = 'none';
@@ -240,4 +241,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-

@@ -14,8 +14,9 @@ if (isset($data['jenis'], $data['jumlah'], $data['keterangan'])) {
     if (($jenis === 'masuk' || $jenis === 'keluar') && $jumlah > 0 && !empty($keterangan)) {
         $conn->begin_transaction();
         try {
-            // 1. Ambil saldo terakhir
+            // 1. Ambil saldo terakhir (Membutuhkan kolom saldo_terakhir)
             $saldo_sebelumnya = 0;
+            // Ganti nama kolom 'jumlah' di query menjadi 'saldo_terakhir'
             $result_saldo = $conn->query("SELECT saldo_terakhir FROM transaksi_kas ORDER BY id DESC LIMIT 1");
             if ($result_saldo->num_rows > 0) {
                 $saldo_sebelumnya = $result_saldo->fetch_assoc()['saldo_terakhir'];
@@ -25,6 +26,7 @@ if (isset($data['jenis'], $data['jumlah'], $data['keterangan'])) {
             $saldo_terakhir = ($jenis === 'masuk') ? $saldo_sebelumnya + $jumlah : $saldo_sebelumnya - $jumlah;
 
             // 3. Simpan transaksi baru
+            // Perhatian: Pastikan tabel transaksi_kas memiliki kolom 'jumlah' (bukan total_harga) dan 'saldo_terakhir'
             $stmt = $conn->prepare("INSERT INTO transaksi_kas (jenis, jumlah, keterangan, saldo_terakhir) VALUES (?, ?, ?, ?)");
             $stmt->bind_param("sdsd", $jenis, $jumlah, $keterangan, $saldo_terakhir);
             $stmt->execute();
@@ -55,4 +57,3 @@ if (isset($data['jenis'], $data['jumlah'], $data['keterangan'])) {
 echo json_encode($response);
 $conn->close();
 ?>
-

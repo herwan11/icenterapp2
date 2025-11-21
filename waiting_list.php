@@ -6,37 +6,45 @@ require_once 'includes/header.php';
 // Ambil status dari URL, default ke 'Antrian' jika tidak ada
 $status = isset($_GET['status']) ? htmlspecialchars($_GET['status']) : 'Antrian';
 
-// Query untuk mengambil data service berdasarkan status
-$sql = "SELECT s.*, c.nama as nama_customer, k.nama as nama_teknisi 
+// Query Utama
+$sql = "SELECT s.*, c.nama as nama_customer, k.nama as nama_teknisi,
+        (
+            COALESCE((SELECT SUM(sk.jumlah * ms.harga_jual) 
+             FROM sparepart_keluar sk 
+             JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart 
+             WHERE sk.invoice_service = s.invoice), 0) 
+            +
+            COALESCE((SELECT SUM(psl.total_harga) 
+             FROM pembelian_sparepart_luar psl 
+             WHERE psl.invoice_service = s.invoice), 0)
+        ) as total_sparepart_calculated
         FROM service s
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN karyawan k ON s.teknisi_id = k.id
         WHERE s.status_service = ? 
         ORDER BY s.tanggal DESC";
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $status);
 $stmt->execute();
 $result = $stmt->get_result();
 $services = $result->fetch_all(MYSQLI_ASSOC);
 
-// Ambil semua data sparepart untuk modal
+// Ambil data sparepart untuk modal
 $spareparts_list = [];
 $result_spareparts = $conn->query("SELECT code_sparepart, nama, harga_jual, stok_tersedia FROM master_sparepart ORDER BY nama ASC");
 while($row = $result_spareparts->fetch_assoc()) {
     $spareparts_list[] = $row;
 }
-
 ?>
 
 <!-- Style khusus untuk halaman ini -->
 <style>
-    /* Gaya tabel tradisional */
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
     .data-table thead th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
     .data-table tbody tr:hover { background-color: #f1f3f5; }
 
-    /* Gaya status */
     .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 500; color: white; display: inline-block; }
     .status-antrian { background-color: #ffc107; color: #333; }
     .status-proses { background-color: #17a2b8; }
@@ -45,7 +53,6 @@ while($row = $result_spareparts->fetch_assoc()) {
     .status-batal, .status-refund { background-color: #dc3545; }
     .status-belum-lunas { background-color: #fd7e14; }
 
-    /* Gaya editor status */
     .status-container { display: flex; align-items: center; gap: 8px; min-width: 150px; }
     .status-display { display: flex; align-items: center; gap: 8px; justify-content: space-between; width: 100%; }
     .status-edit-icon { cursor: pointer; color: #6c757d; transition: color 0.2s; }
@@ -56,8 +63,14 @@ while($row = $result_spareparts->fetch_assoc()) {
     .btn-save { background-color: #28a745; }
     .btn-cancel { background-color: #6c757d; }
     .btn-info { background-color: #17a2b8; color: white; border-radius: 6px; padding: 5px 10px; font-size: 12px;}
+    
+    .status-disabled { opacity: 0.5; pointer-events: none; cursor: not-allowed; filter: grayscale(1); }
 
-    /* === GAYA BARU UNTUK MODAL SPAREPART YANG LEBIH KEREN === */
+    .input-manual { width: 130px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-weight: 600; transition: all 0.3s; }
+    .input-manual:focus { border-color: var(--accent-primary); outline: none; box-shadow: 0 0 0 2px rgba(0,122,255,0.2); }
+    .input-danger { border: 2px solid #dc3545 !important; color: #dc3545; background-color: #fff8f8; }
+    .input-success { border: 2px solid #28a745 !important; color: #28a745; background-color: #f8fff9; }
+
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     .modal-content { background-color: #ffffff; margin: auto; padding: 0; border: none; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 16px 24px; }
@@ -73,7 +86,6 @@ while($row = $result_spareparts->fetch_assoc()) {
     .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555;}
     .form-control { width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; }
     .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-    @media (max-width: 768px) { .modal-grid { grid-template-columns: 1fr; } }
     .modal-tabs { display: flex; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; }
     .tab-link { padding: 10px 20px; cursor: pointer; border: none; background: none; font-weight: 500; color: #6c757d; }
     .tab-link.active { color: var(--accent-primary); border-bottom: 2px solid var(--accent-primary); }
@@ -81,7 +93,6 @@ while($row = $result_spareparts->fetch_assoc()) {
     .tab-content.active { display: block; }
 </style>
 
-<!-- KONTEN UTAMA HALAMAN -->
 <h1 class="page-title">Daftar Service: <?php echo $status; ?></h1>
 
 <div class="card glass-effect">
@@ -91,12 +102,30 @@ while($row = $result_spareparts->fetch_assoc()) {
                 <thead>
                     <tr>
                         <th>Invoice</th>
-                        <th>Customer</th>
-                        <th>Perangkat</th>
-                        <th>Kerusakan</th>
-                        <th>Kelengkapan</th>
+
+                        <?php if ($status != 'Selesai'): ?>
+                            <th>Customer</th>
+                            <th>Perangkat</th>
+                            <th>Kerusakan</th>
+                            <th>Kelengkapan</th>
+                        <?php endif; ?>
+
                         <th>Status</th>
-                        <th>Pembayaran</th>
+                        
+                        <?php if ($status == 'Selesai'): ?>
+                            <th>Harga Sparepart</th>
+                            <th>Biaya Jasa</th>
+                            <th>Sub Total</th>
+                            <th>Uang Muka</th> 
+                            <th>Total Bayar</th>
+                            <th>Sisa Bayar</th>
+                            <th>Payment</th>
+                        <?php endif; ?>
+                        
+                        <?php if (!in_array($status, ['Antrian', 'Proses', 'Batal'])): ?>
+                            <th>Pembayaran</th>
+                        <?php endif; ?>
+
                         <?php if ($status == 'Proses'): ?>
                             <th>Aksi</th>
                         <?php endif; ?>
@@ -104,16 +133,32 @@ while($row = $result_spareparts->fetch_assoc()) {
                 </thead>
                 <tbody>
                     <?php if (empty($services)): ?>
-                        <tr><td colspan="<?php echo ($status == 'Proses') ? '8' : '7'; ?>" style="text-align: center;">Tidak ada data untuk status "<?php echo $status; ?>"</td></tr>
+                        <tr><td colspan="12" style="text-align: center;">Tidak ada data untuk status "<?php echo $status; ?>"</td></tr>
                     <?php else: ?>
                         <?php foreach ($services as $row): ?>
+                            <?php
+                                // Kalkulasi PHP
+                                $total_sparepart = $row['total_sparepart_calculated'];
+                                $sub_total_db = $row['sub_total']; 
+                                $biaya_jasa = max(0, $sub_total_db - $total_sparepart);
+                                $uang_muka = $row['uang_muka'];
+                                $total_bayar = isset($row['total_bayar']) ? $row['total_bayar'] : 0;
+                                
+                                // Sisa Bayar = SubTotal - UangMuka - TotalBayar
+                                $sisa_bayar = $sub_total_db - $uang_muka - $total_bayar;
+                            ?>
                             <tr data-invoice="<?php echo htmlspecialchars($row['invoice']); ?>">
                                 <td><?php echo htmlspecialchars($row['invoice']); ?></td>
-                                <td><?php echo htmlspecialchars($row['nama_customer'] ?? 'N/A'); ?></td>
-                                <td><?php echo htmlspecialchars($row['merek_hp'] . ' ' . $row['tipe_hp']); ?></td>
-                                <td><?php echo htmlspecialchars($row['kerusakan']); ?></td>
-                                <td><?php echo htmlspecialchars($row['kelengkapan']); ?></td>
+
+                                <?php if ($status != 'Selesai'): ?>
+                                    <td><?php echo htmlspecialchars($row['nama_customer'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($row['merek_hp'] . ' ' . $row['tipe_hp']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['kerusakan']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['kelengkapan']); ?></td>
+                                <?php endif; ?>
+
                                 <td>
+                                    <!-- Status Service -->
                                     <div class="status-container" data-type="service">
                                         <div class="status-display">
                                             <span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $row['status_service'])); ?>"><?php echo htmlspecialchars($row['status_service']); ?></span>
@@ -133,6 +178,47 @@ while($row = $result_spareparts->fetch_assoc()) {
                                         </div>
                                     </div>
                                 </td>
+
+                                <?php if ($status == 'Selesai'): ?>
+                                    <!-- Sparepart -->
+                                    <td class="val-sparepart" data-value="<?php echo $total_sparepart; ?>">
+                                        Rp <?php echo number_format($total_sparepart, 0, ',', '.'); ?>
+                                    </td>
+
+                                    <!-- Biaya Jasa -->
+                                    <td>
+                                        <input type="number" class="input-manual input-jasa" 
+                                               value="<?php echo $biaya_jasa; ?>" 
+                                               data-invoice="<?php echo $row['invoice']; ?>" placeholder="0">
+                                    </td>
+
+                                    <!-- Sub Total -->
+                                    <td class="val-subtotal" data-value="<?php echo $sub_total_db; ?>">
+                                        Rp <?php echo number_format($sub_total_db, 0, ',', '.'); ?>
+                                    </td>
+
+                                    <!-- Uang Muka -->
+                                    <td class="val-uangmuka" data-value="<?php echo $uang_muka; ?>">
+                                        Rp <?php echo number_format($uang_muka, 0, ',', '.'); ?>
+                                    </td>
+
+                                    <!-- Total Bayar -->
+                                    <td>
+                                        <input type="number" class="input-manual input-total-bayar" 
+                                               value="<?php echo $total_bayar; ?>" 
+                                               data-invoice="<?php echo $row['invoice']; ?>" placeholder="0">
+                                    </td>
+
+                                    <!-- Sisa Bayar -->
+                                    <td class="val-sisa-bayar" style="font-weight:bold;">
+                                        Rp <?php echo number_format($sisa_bayar, 0, ',', '.'); ?>
+                                    </td>
+
+                                    <!-- Payment Method -->
+                                    <td><?php echo htmlspecialchars(ucfirst($row['metode_pembayaran'])); ?></td>
+                                <?php endif; ?>
+
+                                <?php if (!in_array($status, ['Antrian', 'Proses', 'Batal'])): ?>
                                 <td>
                                      <div class="status-container" data-type="payment">
                                         <div class="status-display">
@@ -149,11 +235,11 @@ while($row = $result_spareparts->fetch_assoc()) {
                                         </div>
                                     </div>
                                 </td>
+                                <?php endif; ?>
+
                                 <?php if ($status == 'Proses'): ?>
                                 <td>
-                                    <button class="btn btn-info manage-sparepart-btn" data-invoice="<?php echo htmlspecialchars($row['invoice']); ?>">
-                                        <i class="fas fa-cog"></i> Sparepart
-                                    </button>
+                                    <button class="btn btn-info manage-sparepart-btn" data-invoice="<?php echo htmlspecialchars($row['invoice']); ?>"><i class="fas fa-cog"></i> Sparepart</button>
                                 </td>
                                 <?php endif; ?>
                             </tr>
@@ -165,7 +251,7 @@ while($row = $result_spareparts->fetch_assoc()) {
     </div>
 </div>
 
-<!-- Modal/Popup untuk Manajemen Sparepart -->
+<!-- Modal Sparepart -->
 <div id="sparepartModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -179,7 +265,7 @@ while($row = $result_spareparts->fetch_assoc()) {
                     <div class="table-wrapper">
                         <table class="data-table" id="usedPartsTable">
                             <thead><tr><th>Nama</th><th>Jumlah</th><th>Tipe</th><th>Aksi</th></tr></thead>
-                            <tbody><!-- Diisi oleh JavaScript --></tbody>
+                            <tbody><!-- JS --></tbody>
                         </table>
                     </div>
                     <div id="noPartsMessage" style="text-align:center; padding: 20px; color: #888; display:none;">Belum ada sparepart yang digunakan.</div>
@@ -190,8 +276,6 @@ while($row = $result_spareparts->fetch_assoc()) {
                          <button class="tab-link active" data-tab="internal">Gunakan Stok Internal</button>
                          <button class="tab-link" data-tab="external">Beli dari Luar</button>
                      </div>
-
-                     <!-- Konten Tab Stok Internal -->
                      <div id="internal" class="tab-content active">
                          <div class="form-group">
                             <label>Pilih Sparepart</label>
@@ -204,28 +288,14 @@ while($row = $result_spareparts->fetch_assoc()) {
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Jumlah</label>
-                            <input type="number" id="sparepart-qty" value="1" min="1" class="form-control">
-                        </div>
+                        <div class="form-group"><label>Jumlah</label><input type="number" id="sparepart-qty" value="1" min="1" class="form-control"></div>
                         <button type="button" id="add-sparepart-btn" class="btn btn-primary" style="width: 100%;">Tambah</button>
                      </div>
-                     
-                     <!-- Konten Tab Beli dari Luar -->
                      <div id="external" class="tab-content">
                          <form id="buyExternalForm">
-                            <div class="form-group">
-                                <label>Nama Sparepart</label>
-                                <input type="text" id="external_nama" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Harga Beli Satuan</label>
-                                <input type="number" id="external_harga" class="form-control" required>
-                            </div>
-                             <div class="form-group">
-                                <label>Jumlah</label>
-                                <input type="number" id="external_qty" value="1" min="1" class="form-control" required>
-                            </div>
+                            <div class="form-group"><label>Nama Sparepart</label><input type="text" id="external_nama" class="form-control" required></div>
+                            <div class="form-group"><label>Harga Beli Satuan</label><input type="number" id="external_harga" class="form-control" required></div>
+                             <div class="form-group"><label>Jumlah</label><input type="number" id="external_qty" value="1" min="1" class="form-control" required></div>
                             <button type="submit" class="btn btn-primary" style="width: 100%;">Beli & Gunakan</button>
                          </form>
                      </div>
@@ -238,7 +308,6 @@ while($row = $result_spareparts->fetch_assoc()) {
     </div>
 </div>
 
-
 <?php require_once 'includes/footer.php'; ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -247,214 +316,224 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModalBtns = modal.querySelectorAll('.close-btn');
     let currentInvoice = null;
 
-    // --- Logika Gabungan untuk Semua Klik di Dalam Tabel ---
+    function formatRupiah(angka) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    }
+
+    // --- PERBAIKAN: Logika Tab Switching ---
+    const tabs = document.querySelectorAll('.tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault(); // Mencegah submit form jika ada
+            tabs.forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+            const targetId = this.dataset.tab;
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+        });
+    });
+
+    // --- FUNGSI KALKULASI BARIS ---
+    function calculateRow(row) {
+        const sparepartVal = parseFloat(row.querySelector('.val-sparepart')?.dataset.value) || 0;
+        const inputJasa = row.querySelector('.input-jasa');
+        const jasaVal = parseFloat(inputJasa?.value) || 0;
+        
+        // 1. Hitung SubTotal (Sparepart + Jasa)
+        const newSubTotal = sparepartVal + jasaVal;
+        
+        // Update tampilan SubTotal
+        const subTotalElem = row.querySelector('.val-subtotal');
+        if(subTotalElem) {
+            subTotalElem.textContent = formatRupiah(newSubTotal);
+            subTotalElem.dataset.value = newSubTotal; 
+        }
+
+        // 2. Ambil Uang Muka
+        const uangMukaVal = parseFloat(row.querySelector('.val-uangmuka')?.dataset.value) || 0;
+
+        // 3. Ambil Total Bayar (Input Manual)
+        const inputTotalBayar = row.querySelector('.input-total-bayar');
+        const totalBayarVal = parseFloat(inputTotalBayar?.value) || 0;
+
+        // 4. Hitung Sisa Bayar = SubTotal - UangMuka - TotalBayar
+        const sisaBayar = newSubTotal - uangMukaVal - totalBayarVal;
+
+        // Update Tampilan Sisa Bayar
+        const sisaElem = row.querySelector('.val-sisa-bayar');
+        if(sisaElem) {
+            sisaElem.textContent = formatRupiah(sisaBayar);
+            // Warna text Sisa Bayar: Merah jika positif (utang), Hijau jika <= 0 (Lunas/Llebih)
+            sisaElem.style.color = (sisaBayar > 0) ? '#dc3545' : '#28a745';
+        }
+
+        // 5. Validasi Warna Input Total Bayar & Kunci Status
+        const payStatusContainer = row.querySelector('.status-container[data-type="payment"]');
+        const payStatusBadge = payStatusContainer?.querySelector('.status-badge');
+
+        if (sisaBayar > 0) {
+            // MASIH KURANG BAYAR
+            if(inputTotalBayar) {
+                inputTotalBayar.classList.add('input-danger');
+                inputTotalBayar.classList.remove('input-success');
+            }
+            // Kunci status jadi Belum Lunas
+            if(payStatusContainer) {
+                payStatusContainer.classList.add('status-disabled');
+                if(payStatusBadge) {
+                    payStatusBadge.textContent = 'Belum Lunas';
+                    payStatusBadge.className = 'status-badge status-belum-lunas';
+                }
+            }
+        } else {
+            // LUNAS / LEBIH
+            if(inputTotalBayar) {
+                inputTotalBayar.classList.remove('input-danger');
+                inputTotalBayar.classList.add('input-success');
+            }
+            // Buka kunci status
+            if(payStatusContainer) {
+                payStatusContainer.classList.remove('status-disabled');
+            }
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    const jasaInputs = document.querySelectorAll('.input-jasa');
+    const totalBayarInputs = document.querySelectorAll('.input-total-bayar');
+
+    // Initialize calculations on load
+    document.querySelectorAll('tbody tr').forEach(row => {
+        if(row.querySelector('.input-jasa')) calculateRow(row);
+    });
+
+    // Input Jasa Changes
+    jasaInputs.forEach(input => {
+        input.addEventListener('input', function() { calculateRow(this.closest('tr')); });
+        input.addEventListener('change', function() {
+            fetch('update_biaya_jasa.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoice: this.dataset.invoice, biaya_jasa: this.value })
+            }).then(r=>r.json()).then(d=> { 
+                if(d.success) { 
+                    const badge = this.closest('tr').querySelector('.status-container[data-type="payment"] .status-badge');
+                    if(badge) { badge.textContent = d.status_bayar; badge.className = `status-badge status-${d.status_bayar.toLowerCase().replace(' ', '-')}`; }
+                    calculateRow(this.closest('tr')); // Re-validate after server logic
+                }
+            });
+        });
+    });
+
+    // Total Bayar Changes
+    totalBayarInputs.forEach(input => {
+        input.addEventListener('input', function() { calculateRow(this.closest('tr')); });
+        input.addEventListener('change', function() {
+            fetch('update_total_bayar.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invoice: this.dataset.invoice, total_bayar: this.value })
+            }).then(r=>r.json()).then(d=> {
+                if(d.success) {
+                    const badge = this.closest('tr').querySelector('.status-container[data-type="payment"] .status-badge');
+                    if(badge) { badge.textContent = d.status_bayar; badge.className = `status-badge status-${d.status_bayar.toLowerCase().replace(' ', '-')}`; }
+                    calculateRow(this.closest('tr'));
+                }
+            });
+        });
+    });
+
+    // --- LOGIKA UMUM (Status & Modal) ---
     tableBody.addEventListener('click', function(event) {
         const target = event.target;
-        
-        // --- Logika untuk Edit Status Interaktif ---
         const statusContainer = target.closest('.status-container');
+        
+        if (statusContainer && statusContainer.classList.contains('status-disabled')) return;
+
         if (statusContainer) {
             const row = target.closest('tr');
-            
             if (target.closest('.status-edit-icon')) {
                 statusContainer.querySelector('.status-display').style.display = 'none';
                 statusContainer.querySelector('.status-editor').style.display = 'flex';
             }
-
             if (target.closest('.btn-cancel')) {
                 statusContainer.querySelector('.status-editor').style.display = 'none';
                 statusContainer.querySelector('.status-display').style.display = 'flex';
             }
-
             if (target.closest('.btn-save')) {
                 const invoice = row.dataset.invoice;
-                const type = statusContainer.dataset.type;
                 const select = statusContainer.querySelector('.status-select');
-                const newStatus = select.value;
-                const oldStatusSpan = statusContainer.querySelector('.status-display .status-badge');
-                const oldStatus = oldStatusSpan.textContent;
-                
-                const endpoint = (type === 'service') ? 'update_status.php' : 'update_payment_status.php';
-                const payload = { invoice: invoice, status: newStatus };
-
+                const endpoint = (statusContainer.dataset.type === 'service') ? 'update_status.php' : 'update_payment_status.php';
                 fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (type === 'service') {
-                            updateMenuBadge(oldStatus, newStatus);
-                            row.style.transition = 'opacity 0.5s ease';
-                            row.style.opacity = '0';
-                            setTimeout(() => row.remove(), 500);
-                        } else {
-                            oldStatusSpan.textContent = newStatus;
-                            oldStatusSpan.className = `status-badge status-${newStatus.toLowerCase().replace(/ /g, '-')}`;
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoice: invoice, status: select.value })
+                }).then(r=>r.json()).then(d=>{
+                    if(d.success) {
+                        if(statusContainer.dataset.type === 'service') location.reload();
+                        else {
+                            statusContainer.querySelector('.status-badge').textContent = select.value;
+                            statusContainer.querySelector('.status-badge').className = `status-badge status-${select.value.toLowerCase().replace(/ /g, '-')}`;
                             statusContainer.querySelector('.status-editor').style.display = 'none';
                             statusContainer.querySelector('.status-display').style.display = 'flex';
                         }
-                    } else {
-                        alert('Gagal memperbarui status: ' + (data.message || 'Error tidak diketahui.'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch Error:', error);
-                    alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
+                    } else alert(d.message);
                 });
             }
         }
-        
-        // --- Logika untuk Modal Sparepart ---
+
         const manageBtn = target.closest('.manage-sparepart-btn');
         if (manageBtn) {
             currentInvoice = manageBtn.dataset.invoice;
-            document.getElementById('modalTitle').textContent = `Penggunaan Sparepart (Invoice: ${currentInvoice})`;
+            document.getElementById('modalTitle').textContent = `Penggunaan Sparepart (${currentInvoice})`;
             loadUsedParts(currentInvoice);
             modal.style.display = 'flex';
         }
     });
 
     closeModalBtns.forEach(btn => btn.addEventListener('click', () => { modal.style.display = 'none'; }));
-
+    
     async function loadUsedParts(invoice) {
-        const response = await fetch(`get_used_spareparts.php?invoice=${invoice}`);
-        const result = await response.json();
-        const usedPartsTbody = document.getElementById('usedPartsTable').querySelector('tbody');
-        const noPartsMsg = document.getElementById('noPartsMessage');
-        usedPartsTbody.innerHTML = '';
-
+        const res = await fetch(`get_used_spareparts.php?invoice=${invoice}`);
+        const result = await res.json();
+        const tbody = document.getElementById('usedPartsTable').querySelector('tbody');
+        tbody.innerHTML = '';
         if (result.success && result.data.length > 0) {
-            usedPartsTbody.parentElement.style.display = 'table';
-            noPartsMsg.style.display = 'none';
+            document.getElementById('noPartsMessage').style.display = 'none';
             result.data.forEach(part => {
-                const row = `
-                    <tr data-id="${part.id}" data-type="${part.tipe}">
-                        <td>${part.nama}</td>
-                        <td>${part.jumlah}</td>
-                        <td><span class="badge" style="background-color: ${part.tipe === 'internal' ? '#007bff' : '#6c757d'}">${part.tipe}</span></td>
-                        <td><button class="remove-part-btn" data-id="${part.id}" data-type="${part.tipe}">Hapus</button></td>
-                    </tr>`;
-                usedPartsTbody.innerHTML += row;
+                tbody.innerHTML += `<tr><td>${part.nama}</td><td>${part.jumlah}</td><td>${part.tipe}</td><td><button class="remove-part-btn" data-id="${part.id}" data-type="${part.tipe}">Hapus</button></td></tr>`;
             });
-        } else {
-            usedPartsTbody.parentElement.style.display = 'none';
-            noPartsMsg.style.display = 'block';
-        }
+        } else document.getElementById('noPartsMessage').style.display = 'block';
     }
     
-    // --- Logika untuk Tab di Modal ---
-    const tabs = document.querySelectorAll('.tab-link');
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(item => item.classList.remove('active'));
-            tab.classList.add('active');
-            const target = document.getElementById(tab.dataset.tab);
-            tabContents.forEach(content => content.classList.remove('active'));
-            target.classList.add('active');
-        });
-    });
-
-    // --- Logika Penambahan Sparepart ---
     document.getElementById('add-sparepart-btn').addEventListener('click', async function() {
         const selector = document.getElementById('sparepart-selector');
         const qtyInput = document.getElementById('sparepart-qty');
-        const selectedOption = selector.options[selector.selectedIndex];
-
-        if (!selectedOption.value) { alert('Pilih sparepart terlebih dahulu.'); return; }
-        
-        const payload = {
-            invoice: currentInvoice,
-            spareparts: [{
-                code: selectedOption.value,
-                qty: parseInt(qtyInput.value),
-                harga: parseFloat(selectedOption.dataset.harga)
-            }]
-        };
-
-        const response = await fetch('add_sparepart_to_service.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            loadUsedParts(currentInvoice);
-            selector.selectedIndex = 0;
-            qtyInput.value = 1;
-        } else {
-            alert('Gagal menambah sparepart: ' + result.message);
-        }
+        if(!selector.value) return alert('Pilih sparepart');
+        fetch('add_sparepart_to_service.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({invoice:currentInvoice, spareparts:[{code:selector.value, qty:qtyInput.value, harga:selector.options[selector.selectedIndex].dataset.harga}]})
+        }).then(r=>r.json()).then(d=>{ if(d.success) loadUsedParts(currentInvoice); else alert(d.message); });
     });
 
     document.getElementById('buyExternalForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const payload = {
-            invoice: currentInvoice,
-            nama: document.getElementById('external_nama').value,
-            harga: document.getElementById('external_harga').value,
-            jumlah: document.getElementById('external_qty').value,
-        };
-        
-        const response = await fetch('buy_external_sparepart.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        if(result.success) {
-            loadUsedParts(currentInvoice);
-            this.reset();
-        } else {
-            alert('Gagal: ' + result.message);
-        }
+        fetch('buy_external_sparepart.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                invoice: currentInvoice,
+                nama: document.getElementById('external_nama').value,
+                harga: document.getElementById('external_harga').value,
+                jumlah: document.getElementById('external_qty').value
+            })
+        }).then(r=>r.json()).then(d=>{ if(d.success){ loadUsedParts(currentInvoice); this.reset(); } else alert(d.message); });
     });
 
     document.getElementById('usedPartsTable').addEventListener('click', async function(e) {
         if(e.target.classList.contains('remove-part-btn')) {
-            const id = e.target.dataset.id;
-            const type = e.target.dataset.type;
-            if(!confirm('Anda yakin ingin menghapus sparepart ini? Stok/Kas akan dikembalikan.')) return;
-
-            const endpoint = type === 'internal' ? 'remove_used_sparepart.php' : 'remove_external_sparepart.php';
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: id })
-            });
-            const result = await response.json();
-
-            if (result.success) {
-                loadUsedParts(currentInvoice);
-            } else {
-                alert('Gagal menghapus: ' + result.message);
-            }
+             if(!confirm('Hapus?')) return;
+             const endpoint = e.target.dataset.type === 'internal' ? 'remove_used_sparepart.php' : 'remove_external_sparepart.php';
+             fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:e.target.dataset.id}) })
+             .then(r=>r.json()).then(d=>{ if(d.success) loadUsedParts(currentInvoice); });
         }
     });
-
-    function updateMenuBadge(oldStatus, newStatus) {
-        const oldBadge = document.querySelector(`.badge[data-status="${oldStatus}"]`);
-        const newBadge = document.querySelector(`.badge[data-status="${newStatus}"]`);
-
-        if (oldBadge) {
-            let count = parseInt(oldBadge.textContent) - 1;
-            oldBadge.textContent = count;
-            if (count <= 0) {
-                oldBadge.style.display = 'none';
-            }
-        }
-        if (newBadge) {
-            let count = isNaN(parseInt(newBadge.textContent)) ? 0 : parseInt(newBadge.textContent);
-            count++;
-            newBadge.textContent = count;
-            newBadge.style.display = 'inline-flex';
-        }
-    }
 });
 </script>
-

@@ -4,6 +4,7 @@ require_once 'includes/header.php';
 
 // Ambil saldo kas saat ini
 $saldo_saat_ini = 0;
+// Harap pastikan Anda sudah menjalankan 'perbaikan_kas.sql' untuk menambahkan kolom saldo_terakhir
 $result_saldo = $conn->query("SELECT saldo_terakhir FROM transaksi_kas ORDER BY id DESC LIMIT 1");
 if ($result_saldo->num_rows > 0) {
     $saldo_saat_ini = $result_saldo->fetch_assoc()['saldo_terakhir'];
@@ -11,6 +12,7 @@ if ($result_saldo->num_rows > 0) {
 
 // Ambil riwayat transaksi
 $riwayat_kas = [];
+// Harap pastikan kolom 'jumlah' dan 'saldo_terakhir' sudah ada
 $result_riwayat = $conn->query("SELECT * FROM transaksi_kas ORDER BY id DESC");
 if ($result_riwayat) {
     while($row = $result_riwayat->fetch_assoc()){
@@ -21,20 +23,151 @@ if ($result_riwayat) {
 
 <!-- Style khusus untuk halaman kas -->
 <style>
-    .kas-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
-    .saldo-card { padding: 20px 24px; flex-grow: 1; }
-    .saldo-card p { color: var(--text-secondary); margin-bottom: 8px; }
-    .saldo-card h2 { font-size: 32px; color: var(--accent-primary); }
-    .action-buttons { display: flex; gap: 12px; }
-    .btn-masuk { background-color: var(--accent-success); color: white; }
-    .btn-keluar { background-color: var(--accent-danger); color: white; }
-    .text-masuk { color: var(--accent-success); font-weight: 500; }
-    .text-keluar { color: var(--accent-danger); font-weight: 500; }
-    /* Gaya untuk modal yang sudah ada di CSS utama, hanya sedikit penyesuaian */
-    .modal-body .form-group label { text-align: left; }
+    /* Menggunakan kembali sebagian besar gaya dari style.css dan menambahkan detail */
+    .kas-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        gap: 20px; 
+        margin-bottom: 24px; 
+        flex-wrap: wrap; 
+    }
+    .saldo-card { 
+        padding: 24px 30px; 
+        flex-grow: 1; 
+        min-width: 250px;
+        border-left: 5px solid var(--accent-primary); 
+    }
+    .saldo-card p { 
+        color: var(--text-secondary); 
+        margin-bottom: 4px; 
+        font-size: 14px;
+    }
+    .saldo-card h2 { 
+        font-size: 36px; 
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+    .action-buttons { 
+        display: flex; 
+        gap: 12px; 
+        flex-shrink: 0;
+    }
+    .btn-masuk, .btn-keluar {
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: transform 0.2s;
+        font-size: 14px;
+    }
+    .btn-masuk { 
+        background-color: var(--accent-success); 
+        color: white; 
+        box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+    }
+    .btn-keluar { 
+        background-color: var(--accent-danger); 
+        color: white; 
+        box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+    }
+    .btn-masuk:hover, .btn-keluar:hover { transform: translateY(-2px); }
+
+    /* === Gaya Tabel Riwayat Responsif === */
+    .data-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        min-width: 600px; /* Lebar minimum untuk mencegah penumpukan di tablet */
+    }
+    .data-table th, .data-table td { 
+        padding: 12px 15px; 
+        text-align: left; 
+        border-bottom: 1px solid var(--border-color); 
+        vertical-align: middle; 
+        white-space: nowrap; /* Mencegah baris pecah */
+    }
+    .data-table thead th { 
+        background-color: #f8f9fa; 
+        color: var(--text-secondary); 
+        font-weight: 600; 
+        font-size: 12px; 
+        text-transform: uppercase;
+    }
+    .data-table tbody tr:hover { 
+        background-color: #f1f3f5; 
+    }
+    
+    .text-masuk { color: var(--accent-success); font-weight: 600; }
+    .text-keluar { color: var(--accent-danger); font-weight: 600; }
+    .saldo-final {
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+
+    /* === Gaya Modal Form === */
+    .modal-content {
+        max-width: 450px; 
+    }
+    .modal-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+    }
+    .modal-body { 
+        padding: 24px; 
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 6px;
+    }
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fff;
+    }
+    .modal-footer button {
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    /* === MEDIA QUERY UNTUK RESPONSIVITAS MOBILE (<= 768px) === */
+    @media (max-width: 768px) {
+        .kas-header {
+            flex-direction: column; /* Tumpuk item secara vertikal */
+            align-items: stretch; /* Regangkan item agar mengisi lebar penuh */
+        }
+        .saldo-card {
+            min-width: 100%; /* Kartu saldo mengambil lebar penuh */
+        }
+        .action-buttons {
+            width: 100%; /* Kotak tombol mengambil lebar penuh */
+            justify-content: space-between; /* Tombol dibagi rata */
+        }
+        .btn-masuk, .btn-keluar {
+            flex: 1; /* Tombol mengisi ruang yang tersedia */
+            text-align: center;
+        }
+        .data-table th, .data-table td {
+            padding: 8px 10px; /* Kurangi padding di mobile */
+            font-size: 13px;
+        }
+        /* Memastikan tabel tetap di dalam table-wrapper untuk scroll horizontal */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+    }
 </style>
 
 <!-- KONTEN UTAMA HALAMAN -->
+<h1 class="page-title">Manajemen Kas Toko</h1>
+
 <div class="kas-header">
     <div class="saldo-card glass-effect">
         <p>Saldo Kas Saat Ini</p>
@@ -70,7 +203,7 @@ if ($result_riwayat) {
                                 <td><?php echo htmlspecialchars($kas['keterangan']); ?></td>
                                 <td class="text-right text-masuk"><?php echo ($kas['jenis'] == 'masuk') ? number_format($kas['jumlah'], 0, ',', '.') : '-'; ?></td>
                                 <td class="text-right text-keluar"><?php echo ($kas['jenis'] == 'keluar') ? number_format($kas['jumlah'], 0, ',', '.') : '-'; ?></td>
-                                <td class="text-right"><strong><?php echo number_format($kas['saldo_terakhir'], 0, ',', '.'); ?></strong></td>
+                                <td class="text-right saldo-final"><strong><?php echo number_format($kas['saldo_terakhir'], 0, ',', '.'); ?></strong></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -133,6 +266,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     kasForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        // Nonaktifkan tombol untuk mencegah double-click
+        const submitButton = document.getElementById('btnSimpanKas');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Menyimpan...';
+
         const payload = {
             jenis: jenisInput.value,
             jumlah: document.getElementById('jumlah').value,
@@ -147,24 +286,35 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update saldo di kartu
-                const formattedSaldo = new Intl.NumberFormat('id-ID').format(data.transaction.saldo_terakhir);
+                // Menggunakan data.new_saldo dan data.new_trx
+                const newTrx = data.new_trx;
+                const formattedSaldo = new Intl.NumberFormat('id-ID').format(data.new_saldo);
                 saldoDisplay.textContent = `Rp ${formattedSaldo}`;
+
+                // Atur nilai Masuk dan Keluar
+                const masuk = newTrx.jenis === 'masuk' ? new Intl.NumberFormat('id-ID').format(newTrx.jumlah) : '-';
+                const keluar = newTrx.jenis === 'keluar' ? new Intl.NumberFormat('id-ID').format(newTrx.jumlah) : '-';
+                
+                // Mendapatkan tanggal saat ini untuk tampilan riwayat (PHP sudah menangani tanggal aslinya)
+                const now = new Date();
+                const dateOptions = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+                const formattedDate = now.toLocaleDateString('id-ID', dateOptions).replace(/\./g, '');
 
                 // Tambah baris baru ke tabel riwayat
                 const newRow = `
                     <tr>
-                        <td>${data.transaction.tanggal}</td>
-                        <td>${data.transaction.keterangan}</td>
-                        <td class="text-right text-masuk">${data.transaction.masuk > 0 ? new Intl.NumberFormat('id-ID').format(data.transaction.masuk) : '-'}</td>
-                        <td class="text-right text-keluar">${data.transaction.keluar > 0 ? new Intl.NumberFormat('id-ID').format(data.transaction.keluar) : '-'}</td>
-                        <td class="text-right"><strong>${formattedSaldo}</strong></td>
+                        <td>${formattedDate}</td>
+                        <td>${newTrx.keterangan}</td>
+                        <td class="text-right text-masuk">${masuk}</td>
+                        <td class="text-right text-keluar">${keluar}</td>
+                        <td class="text-right saldo-final"><strong>${formattedSaldo}</strong></td>
                     </tr>
                 `;
                 // Hapus pesan "belum ada data" jika ada
                 const noDataRow = riwayatBody.querySelector('td[colspan="5"]');
                 if (noDataRow) noDataRow.parentElement.remove();
                 
+                // Masukkan baris baru di posisi paling atas
                 riwayatBody.insertAdjacentHTML('afterbegin', newRow);
 
                 modal.style.display = 'none';
@@ -172,7 +322,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Gagal: ' + data.message);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan jaringan.');
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Simpan';
+        });
     });
 });
 </script>

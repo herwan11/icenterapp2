@@ -50,3 +50,29 @@ Stack trace:
 [30-Aug-2025 18:13:55 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
 [30-Aug-2025 18:13:55 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
 [30-Aug-2025 18:13:56 Asia/Jakarta] PHP Parse error:  syntax error, unexpected '->' (T_OBJECT_OPERATOR) in /home/icey4741/public_html/app/waiting_list.php on line 18
+[03-Oct-2025 08:57:38 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/add_kas_transaction.php:29
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/add_kas_transaction.php on line 29
+[03-Oct-2025 08:57:40 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/add_kas_transaction.php:29
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/add_kas_transaction.php on line 29
+[18-Nov-2025 15:29:55 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/penjualan_sparepart_handler.php:53
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_handler.php on line 53
+[18-Nov-2025 15:39:44 Asia/Jakarta] PHP Warning:  mysqli_stmt::bind_param(): Number of elements in type definition string doesn't match number of bind variables in /home/icey4741/public_html/app/penjualan_sparepart_handler.php on line 54
+[18-Nov-2025 15:39:44 Asia/Jakarta] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/icey4741/public_html/app/penjualan_sparepart_handler.php:54) in /home/icey4741/public_html/app/penjualan_sparepart_handler.php on line 91
+[18-Nov-2025 16:05:51 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/sparepart_dashboard.php:95
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/sparepart_dashboard.php on line 95
+[18-Nov-2025 16:05:59 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/sparepart_dashboard.php:95
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/sparepart_dashboard.php on line 95
+[18-Nov-2025 16:06:26 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in /home/icey4741/public_html/app/sparepart_dashboard.php:95
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/sparepart_dashboard.php on line 95

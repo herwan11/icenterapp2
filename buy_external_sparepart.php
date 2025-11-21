@@ -20,20 +20,25 @@ if (isset($data['invoice'], $data['nama'], $data['jumlah'], $data['harga'])) {
         $conn->begin_transaction();
         try {
             // 1. Simpan ke tabel pembelian_sparepart_luar
+            // Perhatian: Kolom total_harga di tabel ini (pembelian_sparepart_luar) sudah sesuai
             $stmt_beli = $conn->prepare("INSERT INTO pembelian_sparepart_luar (id_pembelian, invoice_service, nama_sparepart, jumlah, harga_satuan, total_harga) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt_beli->bind_param("sssiid", $id_pembelian, $invoice, $nama_sparepart, $jumlah, $harga_satuan, $total_harga);
             $stmt_beli->execute();
 
-            // 2. Potong saldo kas
+            // 2. Potong saldo kas (Dicatat di transaksi_kas)
             $keterangan_kas = "Beli sparepart luar: " . $nama_sparepart . " untuk service " . $invoice;
-            // Ambil saldo terakhir
+            
+            // Ambil saldo terakhir (Membutuhkan kolom saldo_terakhir)
             $saldo_sebelumnya = 0;
+            // Gunakan kolom saldo_terakhir yang sudah ditambahkan via script perbaikan SQL
             $result_saldo = $conn->query("SELECT saldo_terakhir FROM transaksi_kas ORDER BY id DESC LIMIT 1");
             if ($result_saldo->num_rows > 0) {
                 $saldo_sebelumnya = $result_saldo->fetch_assoc()['saldo_terakhir'];
             }
             $saldo_terakhir = $saldo_sebelumnya - $total_harga;
-            // Simpan transaksi kas
+            
+            // Simpan transaksi kas (Membutuhkan kolom jumlah dan saldo_terakhir)
+            // Menggunakan 'jumlah' dan 'saldo_terakhir' sesuai skema yang diperbaiki
             $stmt_kas = $conn->prepare("INSERT INTO transaksi_kas (jenis, jumlah, keterangan, saldo_terakhir) VALUES ('keluar', ?, ?, ?)");
             $stmt_kas->bind_param("dsd", $total_harga, $keterangan_kas, $saldo_terakhir);
             $stmt_kas->execute();
