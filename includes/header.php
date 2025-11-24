@@ -114,7 +114,8 @@ if ($result_counts) {
                         <a href="#" class="nav-link"><i class="fas fa-microchip fa-fw"></i> <span>Acc & Sparepart</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                         <div class="dropdown-content">
                             <a href="stok_sparepart.php" class="nav-link sub-item">Stok Sparepart</a>
-                            <a href="#" class="nav-link sub-item">Penjualan Sparepart</a>
+                            <!-- PERBAIKAN LINK DI SINI: Mengarah ke penjualan_sparepart_view.php -->
+                            <a href="penjualan_sparepart_view.php" class="nav-link sub-item">Penjualan Sparepart</a>
                         </div>
                     </div>
                      <!-- Menu lainnya untuk admin & owner -->
