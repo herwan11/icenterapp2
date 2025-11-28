@@ -87,16 +87,17 @@ if ($result_counts) {
                             </div>
                         </div>
                         
-                        <!-- Menu Kas & Garansi DIPINDAHKAN DARI SINI -->
+                        <!-- Menu Kas & Garansi & Laporan Service DIPINDAHKAN DARI SINI -->
                         
-                        <!-- Submenu Laporan Service -->
-                        <div class="nav-item-dropdown">
-                            <a href="#" class="nav-link sub-item"><span>Laporan Service</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
-                            <div class="dropdown-content">
-                                <a href="#" class="nav-link sub-item-nested">Harian</a>
-                                <a href="#" class="nav-link sub-item-nested">Mingguan</a>
-                            </div>
-                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Laporan Service (Baru - Menu Induk dengan Dropdown) -->
+                <div class="nav-item-dropdown">
+                    <a href="#" class="nav-link"><i class="fas fa-chart-bar fa-fw"></i> <span>Laporan Service</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <div class="dropdown-content">
+                        <a href="#" class="nav-link sub-item">Harian</a>
+                        <a href="#" class="nav-link sub-item">Mingguan</a>
                     </div>
                 </div>
 
