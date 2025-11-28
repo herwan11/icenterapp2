@@ -11,8 +11,15 @@ $bulan_sekarang = date('m');
 $tahun_sekarang = date('Y');
 $jumlah_hari = date('t'); // Mendapatkan jumlah hari dalam bulan ini
 
-// 1. Hitung Penghasilan Service (bulanan) - HANYA YANG LUNAS
-$query_service_bulanan = "SELECT SUM(sub_total) as total_service FROM service WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ? AND status_pembayaran = 'Lunas'";
+// 1. Hitung Penghasilan Service (bulanan) - HANYA YANG STATUSNYA 'Diambil' DAN 'Lunas'
+// PERBAIKAN LOGIKA: Menambahkan filter status_service = 'Diambil'
+$query_service_bulanan = "SELECT SUM(sub_total) as total_service 
+                          FROM service 
+                          WHERE MONTH(tanggal) = ? 
+                          AND YEAR(tanggal) = ? 
+                          AND status_pembayaran = 'Lunas' 
+                          AND status_service = 'Diambil'"; // Filter baru
+
 $stmt_service_bulanan = $conn->prepare($query_service_bulanan);
 $stmt_service_bulanan->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
 $stmt_service_bulanan->execute();
@@ -20,7 +27,8 @@ $result_service_bulanan = $stmt_service_bulanan->get_result()->fetch_assoc();
 $penghasilan_service = $result_service_bulanan['total_service'] ?? 0;
 $stmt_service_bulanan->close();
 
-// 2. Hitung Penggunaan Sparepart Toko (bulanan)
+// 2. Hitung Penggunaan Sparepart Toko (bulanan) - (Tetap menggunakan logika penjualan sparepart global untuk saat ini)
+// Jika ingin lebih spesifik, bisa difilter juga, tapi biasanya penjualan sparepart langsung dianggap 'selesai' saat lunas.
 $query_sparepart = "SELECT SUM(total) as total_sparepart FROM penjualan_sparepart WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?";
 $stmt_sparepart = $conn->prepare($query_sparepart);
 $stmt_sparepart->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
@@ -29,13 +37,13 @@ $result_sparepart = $stmt_sparepart->get_result()->fetch_assoc();
 $penggunaan_sparepart_toko = $result_sparepart['total_sparepart'] ?? 0;
 $stmt_sparepart->close();
 
-// 3. Pembelian Sparepart Luar (data statis)
+// 3. Pembelian Sparepart Luar (data statis - nanti bisa diganti query)
 $pembelian_sparepart_luar = 200000;
 
 // 4. Hitung Laba
 $laba = ($penghasilan_service + $penggunaan_sparepart_toko) - $pembelian_sparepart_luar;
 
-// --- Data untuk Grafik (Dinamis per Hari) - HANYA YANG LUNAS ---
+// --- Data untuk Grafik (Dinamis per Hari) - HANYA YANG STATUSNYA 'Diambil' DAN 'Lunas' ---
 $labels_harian = [];
 for ($i = 1; $i <= $jumlah_hari; $i++) {
     $labels_harian[] = $i;
@@ -43,10 +51,15 @@ for ($i = 1; $i <= $jumlah_hari; $i++) {
 
 $data_harian = array_fill(0, $jumlah_hari, 0); // Buat array berisi 0 sebanyak jumlah hari
 
+// PERBAIKAN LOGIKA GRAFIK: Menambahkan filter status_service = 'Diambil'
 $query_grafik = "SELECT DAY(tanggal) as hari, SUM(sub_total) as total_harian 
                  FROM service 
-                 WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ? AND status_pembayaran = 'Lunas'
+                 WHERE MONTH(tanggal) = ? 
+                 AND YEAR(tanggal) = ? 
+                 AND status_pembayaran = 'Lunas'
+                 AND status_service = 'Diambil' 
                  GROUP BY DAY(tanggal)";
+
 $stmt_grafik = $conn->prepare($query_grafik);
 $stmt_grafik->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
 $stmt_grafik->execute();
@@ -65,7 +78,7 @@ $stmt_grafik->close();
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Konten Utama Halaman -->
-<h1 class="page-title">Service</h1>
+<h1 class="page-title">Service Dashboard</h1>
 
 <!-- Kartu Statistik -->
 <div class="stats-cards-service">
@@ -86,7 +99,7 @@ $stmt_grafik->close();
     <div class="card-service glass-effect" style="--accent-color: var(--accent-primary);">
         <div class="card-service-icon"><i class="fas fa-hand-holding-usd"></i></div>
         <div class="card-service-content">
-            <p>Penghasilan Service (Lunas)</p>
+            <p>Penghasilan Service (Diambil & Lunas)</p>
             <h3>Rp <?php echo number_format($penghasilan_service, 0, ',', '.'); ?></h3>
         </div>
     </div>
@@ -101,7 +114,7 @@ $stmt_grafik->close();
 
 <!-- Grafik -->
 <div class="chart-container glass-effect">
-    <h2 class="chart-title">Grafik service lunas bulan ini</h2>
+    <h2 class="chart-title">Grafik Service (Status: Diambil & Lunas) Bulan Ini</h2>
     <div class="chart-wrapper">
         <canvas id="serviceChart"></canvas>
     </div>
