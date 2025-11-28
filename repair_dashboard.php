@@ -12,13 +12,12 @@ $tahun_sekarang = date('Y');
 $jumlah_hari = date('t'); // Mendapatkan jumlah hari dalam bulan ini
 
 // 1. Hitung Penghasilan Service (bulanan) - HANYA YANG STATUSNYA 'Diambil' DAN 'Lunas'
-// PERBAIKAN LOGIKA: Menambahkan filter status_service = 'Diambil'
 $query_service_bulanan = "SELECT SUM(sub_total) as total_service 
                           FROM service 
                           WHERE MONTH(tanggal) = ? 
                           AND YEAR(tanggal) = ? 
                           AND status_pembayaran = 'Lunas' 
-                          AND status_service = 'Diambil'"; // Filter baru
+                          AND status_service = 'Diambil'";
 
 $stmt_service_bulanan = $conn->prepare($query_service_bulanan);
 $stmt_service_bulanan->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
@@ -27,8 +26,9 @@ $result_service_bulanan = $stmt_service_bulanan->get_result()->fetch_assoc();
 $penghasilan_service = $result_service_bulanan['total_service'] ?? 0;
 $stmt_service_bulanan->close();
 
-// 2. Hitung Penggunaan Sparepart Toko (bulanan) - (Tetap menggunakan logika penjualan sparepart global untuk saat ini)
-// Jika ingin lebih spesifik, bisa difilter juga, tapi biasanya penjualan sparepart langsung dianggap 'selesai' saat lunas.
+// 2. Hitung Penggunaan Sparepart Toko (bulanan)
+// Catatan: Sebaiknya filter juga berdasarkan status pembayaran/service jika ingin konsisten dengan poin 1, 
+// tapi kode asli menghitung semua penjualan sparepart di bulan ini.
 $query_sparepart = "SELECT SUM(total) as total_sparepart FROM penjualan_sparepart WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?";
 $stmt_sparepart = $conn->prepare($query_sparepart);
 $stmt_sparepart->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
@@ -37,10 +37,23 @@ $result_sparepart = $stmt_sparepart->get_result()->fetch_assoc();
 $penggunaan_sparepart_toko = $result_sparepart['total_sparepart'] ?? 0;
 $stmt_sparepart->close();
 
-// 3. Pembelian Sparepart Luar (data statis - nanti bisa diganti query)
-$pembelian_sparepart_luar = 200000;
+// 3. Pembelian Sparepart Luar (DINAMIS DARI DATABASE)
+// Mengambil total dari tabel pembelian_sparepart_luar untuk bulan ini
+// Asumsi tabel pembelian_sparepart_luar memiliki kolom tanggal_beli (default current_timestamp).
+$query_pembelian_luar = "SELECT SUM(total_harga) as total_beli_luar 
+                         FROM pembelian_sparepart_luar 
+                         WHERE MONTH(tanggal_beli) = ? AND YEAR(tanggal_beli) = ?";
+
+$stmt_pembelian_luar = $conn->prepare($query_pembelian_luar);
+$stmt_pembelian_luar->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
+$stmt_pembelian_luar->execute();
+$result_pembelian_luar = $stmt_pembelian_luar->get_result()->fetch_assoc();
+$pembelian_sparepart_luar = $result_pembelian_luar['total_beli_luar'] ?? 0; // Nilai default 0 jika null
+$stmt_pembelian_luar->close();
+
 
 // 4. Hitung Laba
+// Laba = (Service Lunas + Penjualan Sparepart) - Pembelian Sparepart Luar
 $laba = ($penghasilan_service + $penggunaan_sparepart_toko) - $pembelian_sparepart_luar;
 
 // --- Data untuk Grafik (Dinamis per Hari) - HANYA YANG STATUSNYA 'Diambil' DAN 'Lunas' ---
@@ -49,9 +62,8 @@ for ($i = 1; $i <= $jumlah_hari; $i++) {
     $labels_harian[] = $i;
 }
 
-$data_harian = array_fill(0, $jumlah_hari, 0); // Buat array berisi 0 sebanyak jumlah hari
+$data_harian = array_fill(0, $jumlah_hari, 0);
 
-// PERBAIKAN LOGIKA GRAFIK: Menambahkan filter status_service = 'Diambil'
 $query_grafik = "SELECT DAY(tanggal) as hari, SUM(sub_total) as total_harian 
                  FROM service 
                  WHERE MONTH(tanggal) = ? 
@@ -66,7 +78,6 @@ $stmt_grafik->execute();
 $result_grafik = $stmt_grafik->get_result();
 
 while ($row = $result_grafik->fetch_assoc()) {
-    // Masukkan data ke array pada indeks yang benar (hari - 1)
     $hari = (int)$row['hari'];
     $total = (float)$row['total_harian'];
     $data_harian[$hari - 1] = $total;
