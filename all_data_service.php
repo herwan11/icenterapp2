@@ -6,7 +6,8 @@ require_once 'includes/header.php';
 
 // --- Ambil SEMUA data dari database ---
 $service_data = [];
-// Query diperbarui untuk mengambil semua kolom dan nama dari tabel relasi
+
+// Query diperbarui untuk mengambil data service utama
 $sql = "SELECT 
             s.*, 
             c.nama as nama_customer, 
@@ -19,8 +20,38 @@ $sql = "SELECT
         ORDER BY s.tanggal DESC";
 
 $result = $conn->query($sql);
+
 if ($result) {
     while ($row = $result->fetch_assoc()) {
+        $invoice = $row['invoice'];
+        
+        // --- 1. Ambil Sparepart Internal (Stok Toko) ---
+        $internal_parts = [];
+        $sql_internal = "SELECT ms.nama, sk.jumlah 
+                         FROM sparepart_keluar sk 
+                         JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart 
+                         WHERE sk.invoice_service = '$invoice'";
+        $res_internal = $conn->query($sql_internal);
+        while($part = $res_internal->fetch_assoc()) {
+            $internal_parts[] = $part['nama'] . " (" . $part['jumlah'] . ")";
+        }
+
+        // --- 2. Ambil Sparepart Eksternal (Beli Luar) ---
+        $external_parts = [];
+        $sql_external = "SELECT nama_sparepart, jumlah 
+                         FROM pembelian_sparepart_luar 
+                         WHERE invoice_service = '$invoice'";
+        $res_external = $conn->query($sql_external);
+        while($part = $res_external->fetch_assoc()) {
+            $external_parts[] = $part['nama_sparepart'] . " (" . $part['jumlah'] . ")"; // Perbaikan nama kolom
+        }
+
+        // Gabungkan kedua jenis sparepart
+        $all_spareparts = array_merge($internal_parts, $external_parts);
+        
+        // Simpan sebagai string yang dipisahkan koma, atau '-' jika kosong
+        $row['sparepart_list'] = !empty($all_spareparts) ? implode(", ", $all_spareparts) : "-";
+
         $service_data[] = $row;
     }
 }
@@ -52,7 +83,7 @@ function get_status_color($status) {
     .data-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px; /* Ukuran font lebih kecil untuk memuat banyak kolom */
+        font-size: 12px;
     }
     .data-table th, .data-table td {
         padding: 10px 12px;
@@ -70,7 +101,6 @@ function get_status_color($status) {
     .data-table tbody tr:hover {
         background-color: #f1f1f1;
     }
-    /* Gaya untuk badge status */
     .status-badge-all {
         padding: 5px 10px;
         border-radius: 15px;
@@ -78,6 +108,14 @@ function get_status_color($status) {
         font-size: 11px;
         font-weight: 500;
         text-align: center;
+    }
+    /* Style khusus untuk kolom sparepart agar bisa wrap jika panjang */
+    .col-sparepart {
+        white-space: normal !important; 
+        max-width: 250px;
+        font-size: 11px;
+        color: #555;
+        line-height: 1.4;
     }
 </style>
 
@@ -95,9 +133,8 @@ function get_status_color($status) {
                     <th>Customer</th>
                     <th>Teknisi</th>
                     <th>Perangkat</th>
-                    <th>IMEI/SN</th>
                     <th>Kerusakan</th>
-                    <th>Kelengkapan</th>
+                    <th>Detail Sparepart</th> <!-- Kolom Baru -->
                     <th>Sub Total</th>
                     <th>Uang Muka</th>
                     <th>Status Service</th>
@@ -107,7 +144,7 @@ function get_status_color($status) {
             <tbody>
                 <?php if (empty($service_data)): ?>
                     <tr>
-                        <td colspan="13" style="text-align: center; padding: 20px;">Belum ada data service.</td>
+                        <td colspan="12" style="text-align: center; padding: 20px;">Belum ada data service.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($service_data as $data): ?>
@@ -118,9 +155,13 @@ function get_status_color($status) {
                             <td><?php echo htmlspecialchars($data['nama_customer'] ?? 'N/A'); ?></td>
                             <td><?php echo htmlspecialchars($data['nama_teknisi'] ?? 'N/A'); ?></td>
                             <td><?php echo htmlspecialchars($data['merek_hp'] . ' ' . $data['tipe_hp']); ?></td>
-                            <td><?php echo htmlspecialchars($data['imei_sn']); ?></td>
                             <td><?php echo htmlspecialchars($data['kerusakan']); ?></td>
-                            <td><?php echo htmlspecialchars($data['kelengkapan']); ?></td>
+                            
+                            <!-- Menampilkan Sparepart -->
+                            <td class="col-sparepart">
+                                <?php echo htmlspecialchars($data['sparepart_list']); ?>
+                            </td>
+
                             <td><?php echo number_format($data['sub_total'], 0, ',', '.'); ?></td>
                             <td><?php echo number_format($data['uang_muka'], 0, ',', '.'); ?></td>
                             <td>
@@ -140,7 +181,6 @@ function get_status_color($status) {
         </table>
     </div>
 </div>
-
 
 <?php
 // Sertakan footer halaman (wajib)
