@@ -56,39 +56,41 @@ if ($result_counts) {
                         <a href="all_data_service.php" class="nav-link sub-item">All data</a>
                         <a href="input_data_service.php" class="nav-link sub-item">Input Data</a>
                         
-                        <!-- Submenu Waiting List -->
-                        <div class="nav-item-dropdown">
-                            <a href="#" class="nav-link sub-item"><span>Waiting List</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
-                            <div class="dropdown-content">
-                                <a href="waiting_list.php?status=Antrian" class="nav-link sub-item-nested">
-                                    <span>Antrian</span> 
-                                    <span class="badge" data-status="Antrian" style="<?php echo ($status_counts['Antrian'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Antrian']; ?></span>
-                                </a>
-                                <a href="waiting_list.php?status=Proses" class="nav-link sub-item-nested">
-                                    <span>Proses</span> 
-                                    <span class="badge" data-status="Proses" style="<?php echo ($status_counts['Proses'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Proses']; ?></span>
-                                </a>
-                                <a href="waiting_list.php?status=Selesai" class="nav-link sub-item-nested">
-                                    <span>Selesai</span> 
-                                    <span class="badge" data-status="Selesai" style="<?php echo ($status_counts['Selesai'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Selesai']; ?></span>
-                                </a>
-                                <a href="waiting_list.php?status=Diambil" class="nav-link sub-item-nested">
-                                    <span>Diambil</span> 
-                                    <span class="badge" data-status="Diambil" style="<?php echo ($status_counts['Diambil'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Diambil']; ?></span>
-                                </a>
-                                <a href="waiting_list.php?status=Batal" class="nav-link sub-item-nested">
-                                    <span>Batal</span> 
-                                    <span class="badge" data-status="Batal" style="<?php echo ($status_counts['Batal'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Batal']; ?></span>
-                                </a>
-                                <a href="waiting_list.php?status=Refund" class="nav-link sub-item-nested">
-                                    <span>Refund</span> 
-                                    <span class="badge" data-status="Refund" style="<?php echo ($status_counts['Refund'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Refund']; ?></span>
-                                </a>
-                            </div>
-                        </div>
+                        <!-- Waiting List dan Submenu DIPINDAHKAN DARI SINI -->
                         
-                        <!-- Menu Kas & Garansi & Laporan Service DIPINDAHKAN DARI SINI -->
+                        <!-- Menu Kas & Garansi & Laporan Service SUDAH DIPINDAHKAN SEBELUMNYA -->
                         
+                    </div>
+                </div>
+
+                <!-- Menu Waiting List (Baru - Menu Induk dengan Dropdown) -->
+                <div class="nav-item-dropdown">
+                    <a href="#" class="nav-link"><i class="fas fa-clipboard-list fa-fw"></i> <span>Waiting List</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <div class="dropdown-content">
+                        <a href="waiting_list.php?status=Antrian" class="nav-link sub-item-nested">
+                            <span>Antrian</span> 
+                            <span class="badge" data-status="Antrian" style="<?php echo ($status_counts['Antrian'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Antrian']; ?></span>
+                        </a>
+                        <a href="waiting_list.php?status=Proses" class="nav-link sub-item-nested">
+                            <span>Proses</span> 
+                            <span class="badge" data-status="Proses" style="<?php echo ($status_counts['Proses'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Proses']; ?></span>
+                        </a>
+                        <a href="waiting_list.php?status=Selesai" class="nav-link sub-item-nested">
+                            <span>Selesai</span> 
+                            <span class="badge" data-status="Selesai" style="<?php echo ($status_counts['Selesai'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Selesai']; ?></span>
+                        </a>
+                        <a href="waiting_list.php?status=Diambil" class="nav-link sub-item-nested">
+                            <span>Diambil</span> 
+                            <span class="badge" data-status="Diambil" style="<?php echo ($status_counts['Diambil'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Diambil']; ?></span>
+                        </a>
+                        <a href="waiting_list.php?status=Batal" class="nav-link sub-item-nested">
+                            <span>Batal</span> 
+                            <span class="badge" data-status="Batal" style="<?php echo ($status_counts['Batal'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Batal']; ?></span>
+                        </a>
+                        <a href="waiting_list.php?status=Refund" class="nav-link sub-item-nested">
+                            <span>Refund</span> 
+                            <span class="badge" data-status="Refund" style="<?php echo ($status_counts['Refund'] > 0) ? '' : 'display:none;'; ?>"><?php echo $status_counts['Refund']; ?></span>
+                        </a>
                     </div>
                 </div>
 
