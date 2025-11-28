@@ -87,8 +87,7 @@ if ($result_counts) {
                             </div>
                         </div>
                         
-                        <a href="kas.php" class="nav-link sub-item">Kas</a>
-                        <a href="#" class="nav-link sub-item">Garansi</a>
+                        <!-- Menu Kas & Garansi DIPINDAHKAN DARI SINI -->
                         
                         <!-- Submenu Laporan Service -->
                         <div class="nav-item-dropdown">
@@ -100,6 +99,12 @@ if ($result_counts) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Menu Kas (Baru - Menu Induk) -->
+                <a href="kas.php" class="nav-link"><i class="fas fa-wallet fa-fw"></i> <span>Kas</span></a>
+
+                <!-- Menu Garansi (Baru - Menu Induk) -->
+                <a href="#" class="nav-link"><i class="fas fa-shield-alt fa-fw"></i> <span>Garansi</span></a>
 
                 <!-- Menu Customers -->
                 <a href="customers.php" class="nav-link"><i class="fas fa-users fa-fw"></i> <span>Customers</span></a>
