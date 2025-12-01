@@ -246,6 +246,28 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
     .close-btn { color: #8e8e93; font-size: 24px; font-weight: bold; cursor: pointer; background: none; border: none; transition: color 0.2s; }
     .close-btn:hover { color: #333; }
 
+    /* Customer List in Modal */
+    .customer-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e5e5ea;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .customer-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f2f2f7;
+        cursor: pointer;
+        transition: background-color 0.1s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .customer-item:last-child { border-bottom: none; }
+    .customer-item:hover { background-color: #f9f9f9; }
+    .cust-name { font-weight: 600; color: #1c1c1e; }
+    .cust-contact { font-size: 12px; color: #8a8a8e; }
+
     /* Responsiveness */
     @media (max-width: 992px) {
         .form-layout { grid-template-columns: 1fr; }
@@ -285,13 +307,14 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                     <div class="form-group">
                         <label>Nama Konsumen <span style="color:red">*</span></label>
                         <div class="customer-select-wrapper">
-                            <select id="customer_id" name="customer_id" class="form-control" required>
-                                <option value="">--- Pilih Konsumen ---</option>
-                                <?php foreach($customers as $customer): ?>
-                                <option value="<?php echo $customer['id']; ?>" data-alamat="<?php echo htmlspecialchars($customer['alamat']); ?>" data-kontak="<?php echo htmlspecialchars($customer['no_hp']); ?>" data-keluhan="<?php echo htmlspecialchars($customer['keluhan']); ?>"><?php echo htmlspecialchars($customer['nama']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="button" id="newCustomerBtn" class="btn-add-customer" title="Tambah Konsumen Baru">
+                            <!-- Input Hidden untuk menyimpan ID Customer yang dipilih -->
+                            <input type="hidden" id="customer_id" name="customer_id" required>
+                            
+                            <!-- Input Readonly untuk menampilkan nama -->
+                            <input type="text" id="customer_display_name" class="form-control" readonly placeholder="-- Pilih Konsumen --" style="cursor: pointer;" onclick="openSearchModal()">
+                            
+                            <!-- Tombol Tambah/Cari -->
+                            <button type="button" class="btn-add-customer" title="Cari / Tambah Konsumen" onclick="openSearchModal()">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -420,13 +443,39 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
     </form>
 </div>
 
-<!-- Modal/Popup untuk Tambah Customer Baru -->
-<div id="customerModal" class="modal">
+<!-- MODAL 1: SEARCH & SELECT CUSTOMER (BARU) -->
+<div id="searchCustomerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Pilih Konsumen</h2>
+            <button type="button" class="close-btn" onclick="closeSearchModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <input type="text" id="search_customer_input" class="form-control" placeholder="Cari nama atau nomor HP..." onkeyup="filterCustomers()">
+            </div>
+            
+            <div class="customer-list" id="customerListContainer">
+                <!-- List akan diisi oleh Javascript -->
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                <p style="margin-bottom: 10px; color: #666;">Konsumen belum terdaftar?</p>
+                <button type="button" class="btn btn-primary" onclick="openAddCustomerModal()">
+                    <i class="fas fa-user-plus"></i> Tambah Konsumen Baru
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: TAMBAH CUSTOMER BARU (SUDAH ADA, DIMODIFIKASI DIKIT) -->
+<div id="addCustomerModal" class="modal">
     <div class="modal-content">
         <form id="addCustomerForm">
             <div class="modal-header">
                 <h2>Tambah Pelanggan Baru</h2>
-                <button type="button" class="close-btn">&times;</button>
+                <button type="button" class="close-btn" onclick="closeAddCustomerModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -447,7 +496,7 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary close-btn" style="background: #e5e5ea; color: #333;">Batal</button>
+                <button type="button" class="btn btn-secondary close-btn" onclick="closeAddCustomerModal()" style="background: #e5e5ea; color: #333;">Batal</button>
                 <button type="submit" class="btn btn-primary" style="background: #007aff; color: white; border: none;">Simpan Pelanggan</button>
             </div>
         </form>
@@ -458,43 +507,96 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
 
 <!-- Skrip JavaScript -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const customerSelect = document.getElementById('customer_id');
-    const customerAlamat = document.getElementById('customer_alamat');
-    const customerKontak = document.getElementById('customer_kontak');
-    const kerusakanTextarea = document.getElementById('kerusakan');
+// Data Pelanggan dari PHP ke JS
+const customersData = <?php echo json_encode($customers); ?>;
 
-    customerSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        customerAlamat.value = selectedOption.getAttribute('data-alamat') || '';
-        customerKontak.value = selectedOption.getAttribute('data-kontak') || '';
-        kerusakanTextarea.value = selectedOption.getAttribute('data-keluhan') || ''; 
+// DOM Elements
+const searchModal = document.getElementById('searchCustomerModal');
+const addModal = document.getElementById('addCustomerModal');
+const customerListContainer = document.getElementById('customerListContainer');
+
+// --- FUNGSI MODAL ---
+function openSearchModal() {
+    searchModal.style.display = 'flex';
+    renderCustomerList(customersData); // Render semua saat dibuka
+    document.getElementById('search_customer_input').focus();
+}
+
+function closeSearchModal() {
+    searchModal.style.display = 'none';
+}
+
+function openAddCustomerModal() {
+    closeSearchModal(); // Tutup modal cari dulu
+    addModal.style.display = 'flex';
+}
+
+function closeAddCustomerModal() {
+    addModal.style.display = 'none';
+}
+
+// --- LOGIKA SEARCH & SELECT ---
+function renderCustomerList(data) {
+    customerListContainer.innerHTML = '';
+    if (data.length === 0) {
+        customerListContainer.innerHTML = '<div style="padding:15px; text-align:center; color:#999;">Tidak ditemukan.</div>';
+        return;
+    }
+
+    data.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'customer-item';
+        item.innerHTML = `
+            <div>
+                <div class="cust-name">${c.nama}</div>
+                <div class="cust-contact">${c.no_hp}</div>
+            </div>
+            <i class="fas fa-chevron-right" style="color:#ccc;"></i>
+        `;
+        item.onclick = () => selectCustomer(c);
+        customerListContainer.appendChild(item);
     });
+}
 
-    // --- Logika untuk Modal Customer ---
-    const modal = document.getElementById('customerModal');
-    const openModalBtn = document.getElementById('newCustomerBtn');
-    const closeModalBtns = modal.querySelectorAll('.close-btn');
-    const addCustomerForm = document.getElementById('addCustomerForm');
+function filterCustomers() {
+    const query = document.getElementById('search_customer_input').value.toLowerCase();
+    const filtered = customersData.filter(c => 
+        c.nama.toLowerCase().includes(query) || 
+        c.no_hp.toLowerCase().includes(query)
+    );
+    renderCustomerList(filtered);
+}
 
-    openModalBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
-    closeModalBtns.forEach(btn => { btn.addEventListener('click', () => { modal.style.display = 'none'; }); });
+function selectCustomer(customer) {
+    // Isi form utama
+    document.getElementById('customer_id').value = customer.id;
+    document.getElementById('customer_display_name').value = customer.nama;
+    document.getElementById('customer_kontak').value = customer.no_hp;
+    document.getElementById('customer_alamat').value = customer.alamat || '';
+    
+    // Isi keluhan jika ada (opsional, mungkin teknisi mau input ulang)
+    // document.getElementById('kerusakan').value = customer.keluhan || ''; 
+
+    closeSearchModal();
+}
+
+// --- EVENT LISTENER UTAMA ---
+document.addEventListener('DOMContentLoaded', function() {
     
     // Close modal when clicking outside
     window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (e.target === searchModal) closeSearchModal();
+        if (e.target === addModal) closeAddCustomerModal();
     });
     
-    addCustomerForm.addEventListener('submit', function(e) {
+    // Form Tambah Customer
+    document.getElementById('addCustomerForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const nama = document.getElementById('new_customer_nama').value;
         const kontak = document.getElementById('new_customer_kontak').value;
         const alamat = document.getElementById('new_customer_alamat').value;
         const keluhan = document.getElementById('new_customer_keluhan').value;
 
-        // Visual feedback on button
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerText;
         submitBtn.innerText = 'Menyimpan...';
@@ -508,18 +610,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const newOption = new Option(data.customer.nama, data.customer.id, true, true);
-                newOption.setAttribute('data-alamat', data.customer.alamat);
-                newOption.setAttribute('data-kontak', data.customer.kontak);
-                newOption.setAttribute('data-keluhan', data.customer.keluhan);
-                customerSelect.appendChild(newOption);
+                // Tambahkan ke data lokal JS
+                const newCust = data.customer;
+                customersData.push(newCust);
                 
-                // Trigger change event
-                customerSelect.dispatchEvent(new Event('change'));
+                // Langsung pilih customer baru
+                selectCustomer(newCust);
+                
+                // Isi keluhan otomatis karena baru diinput
+                document.getElementById('kerusakan').value = keluhan;
 
-                modal.style.display = 'none';
-                addCustomerForm.reset();
-                alert('Pelanggan berhasil ditambahkan!');
+                closeAddCustomerModal();
+                document.getElementById('addCustomerForm').reset();
+                // alert('Pelanggan berhasil ditambahkan!'); // Opsional, biar lebih smooth gak usah alert
             } else {
                 alert('Gagal menambahkan pelanggan: ' + data.message);
             }
