@@ -23,7 +23,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
         $durasi_garansi_unit = $_POST['durasi_garansi_unit'];
         $durasi_garansi = $durasi_garansi_val . ' ' . $durasi_garansi_unit;
         
-        // PERUBAHAN: Sub total diset ke 0 karena input dihilangkan dari form
         $sub_total = 0; 
         
         $uang_muka = $_POST['uang_muka'];
@@ -80,65 +79,61 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
         align-items: center;
         box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);
     }
-    .invoice-header h2 {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0;
-        letter-spacing: 0.5px;
-    }
-    .invoice-header .invoice-label {
-        font-size: 12px;
-        opacity: 0.8;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+    .invoice-header h2 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: 0.5px; }
+    .invoice-header .invoice-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Layout Form Grid */
-    .form-layout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        padding: 30px;
+    /* FORM LAYOUT BARU (GRID) */
+    .form-main-wrapper {
         background-color: #ffffff;
         border-radius: 0 0 16px 16px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        padding: 24px;
+    }
+
+    .grid-top-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .bottom-row-section {
+        margin-top: 24px;
     }
 
     /* Section Styles */
     .form-section {
         background-color: #f9f9f9;
-        padding: 25px;
+        padding: 20px;
         border-radius: 12px;
         border: 1px solid #eef0f2;
-        height: 100%;
+        height: 100%; /* Agar tinggi kolom kiri & kanan seimbang */
     }
     .form-section h4 {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 700;
         color: #1c1c1e;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
         border-bottom: 2px solid #e5e5ea;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
-    .form-section h4 i {
-        color: var(--accent-primary);
-    }
+    .form-section h4 i { color: var(--accent-primary); }
 
-    /* Form Group Styles */
-    .form-group { margin-bottom: 18px; }
+    /* Form Elements */
+    .form-group { margin-bottom: 16px; }
     .form-group label {
         display: block;
         font-weight: 600;
         color: #48484a;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         font-size: 13px;
     }
     .form-control {
         width: 100%;
-        padding: 12px 16px;
+        padding: 10px 14px;
         border: 1px solid #d1d1d6;
         border-radius: 8px;
         background-color: #fff;
@@ -146,132 +141,86 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
         color: #1c1c1e;
         transition: all 0.2s ease;
     }
-    .form-control:focus {
-        border-color: var(--accent-primary);
-        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
-        outline: none;
-    }
-    .form-control[readonly] {
-        background-color: #f2f2f7;
-        color: #8e8e93;
-        cursor: not-allowed;
-    }
+    .form-control:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15); outline: none; }
+    .form-control[readonly] { background-color: #fff; cursor: pointer; } /* Agar terlihat seperti input biasa tapi clickable */
     textarea.form-control { resize: vertical; min-height: 80px; }
 
     /* Custom Select Wrapper for Customer */
-    .customer-select-wrapper {
-        display: flex;
-        gap: 10px;
-    }
+    .customer-select-wrapper { display: flex; gap: 8px; }
     .btn-add-customer {
         background-color: #34c759;
         color: white;
         border: none;
         border-radius: 8px;
-        width: 48px;
+        width: 42px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        font-size: 16px;
         cursor: pointer;
         transition: background-color 0.2s;
     }
-    .btn-add-customer:hover {
-        background-color: #2db14d;
-    }
+    .btn-add-customer:hover { background-color: #2db14d; }
 
-    /* Radio Button Group */
-    .radio-group {
-        display: flex;
+    /* Grid untuk Garansi & Pembayaran (Bottom) */
+    .payment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
-        align-items: center;
-        padding: 10px 0;
-    }
-    .radio-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-    }
-    .radio-item input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--accent-primary);
-        cursor: pointer;
     }
 
-    /* Input Group (e.g., Duration) */
-    .input-group {
-        display: flex;
-        gap: 10px;
-    }
+    /* Radio & Checkbox */
+    .radio-group { display: flex; gap: 16px; align-items: center; min-height: 42px; }
+    .radio-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+    .radio-item input { width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer; }
 
     /* Footer Button */
     .form-footer {
-        margin-top: 30px;
+        margin-top: 24px;
         text-align: right;
-        grid-column: span 2;
         border-top: 1px solid #eee;
         padding-top: 20px;
     }
     .btn-submit {
         background-color: var(--accent-primary);
         color: white;
-        padding: 14px 32px;
-        border-radius: 12px;
+        padding: 12px 32px;
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 16px;
+        font-size: 15px;
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 8px;
     }
-    .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
-    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0, 122, 255, 0.4); }
 
-    /* Modal Styles (Dipercantik) */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    /* Modal Styles */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(3px); }
     .modal-content { background-color: #ffffff; padding: 0; border: none; width: 90%; max-width: 500px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; animation: modalSlideIn 0.3s ease; }
     @keyframes modalSlideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 20px 30px; }
-    .modal-header h2 { font-size: 20px; margin: 0; color: #333; font-weight: 700; }
-    .modal-body { padding: 30px; }
-    .modal-footer { background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 20px 30px; text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
-    .close-btn { color: #8e8e93; font-size: 24px; font-weight: bold; cursor: pointer; background: none; border: none; transition: color 0.2s; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 16px 24px; }
+    .modal-header h2 { font-size: 18px; margin: 0; color: #333; font-weight: 700; }
+    .modal-body { padding: 24px; }
+    .modal-footer { background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 16px 24px; text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
+    .close-btn { color: #8e8e93; font-size: 20px; font-weight: bold; cursor: pointer; background: none; border: none; }
     .close-btn:hover { color: #333; }
 
-    /* Customer List in Modal */
-    .customer-list {
-        max-height: 300px;
-        overflow-y: auto;
-        border: 1px solid #e5e5ea;
-        border-radius: 8px;
-        margin-top: 10px;
-    }
-    .customer-item {
-        padding: 12px 16px;
-        border-bottom: 1px solid #f2f2f7;
-        cursor: pointer;
-        transition: background-color 0.1s;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .customer-list { max-height: 300px; overflow-y: auto; border: 1px solid #e5e5ea; border-radius: 8px; margin-top: 10px; }
+    .customer-item { padding: 10px 14px; border-bottom: 1px solid #f2f2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .customer-item:last-child { border-bottom: none; }
-    .customer-item:hover { background-color: #f9f9f9; }
-    .cust-name { font-weight: 600; color: #1c1c1e; }
+    .customer-item:hover { background-color: #f0f8ff; }
+    .cust-name { font-weight: 600; color: #1c1c1e; font-size: 14px; }
     .cust-contact { font-size: 12px; color: #8a8a8e; }
 
     /* Responsiveness */
     @media (max-width: 992px) {
-        .form-layout { grid-template-columns: 1fr; }
-        .form-footer { grid-column: span 1; text-align: center; }
+        .grid-top-row { grid-template-columns: 1fr; }
+        .payment-grid { grid-template-columns: 1fr; }
         .btn-submit { width: 100%; justify-content: center; }
     }
 </style>
@@ -297,144 +246,146 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
     <form action="input_data_service.php" method="POST">
         <input type="hidden" name="invoice" value="<?php echo $invoice_number; ?>">
 
-        <div class="form-layout">
-            <!-- KOLOM KIRI: Data Konsumen & Teknisi -->
-            <div class="left-column">
-                <!-- Section 1: Data Konsumen -->
-                <div class="form-section mb-4">
-                    <h4><i class="fas fa-user-circle"></i> Data Konsumen</h4>
+        <div class="form-main-wrapper">
+            
+            <!-- GRID ATAS: 2 Kolom -->
+            <div class="grid-top-row">
+                
+                <!-- KOLOM KIRI: Konsumen & Perangkat -->
+                <div class="left-column-wrapper" style="display: flex; flex-direction: column; gap: 24px;">
                     
-                    <div class="form-group">
-                        <label>Nama Konsumen <span style="color:red">*</span></label>
-                        <div class="customer-select-wrapper">
-                            <!-- Input Hidden untuk menyimpan ID Customer yang dipilih -->
-                            <input type="hidden" id="customer_id" name="customer_id" required>
-                            
-                            <!-- Input Readonly untuk menampilkan nama -->
-                            <input type="text" id="customer_display_name" class="form-control" readonly placeholder="-- Pilih Konsumen --" style="cursor: pointer;" onclick="openSearchModal()">
-                            
-                            <!-- Tombol Tambah/Cari -->
-                            <button type="button" class="btn-add-customer" title="Cari / Tambah Konsumen" onclick="openSearchModal()">
-                                <i class="fas fa-plus"></i>
-                            </button>
+                    <!-- 1. Data Konsumen (Ringkas) -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user-circle"></i> Data Konsumen</h4>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Nama Konsumen <span style="color:red">*</span></label>
+                            <div class="customer-select-wrapper">
+                                <!-- Hidden ID -->
+                                <input type="hidden" id="customer_id" name="customer_id" required>
+                                
+                                <!-- Tampilan Nama (Readonly + Clickable) -->
+                                <input type="text" id="customer_display_name" class="form-control" readonly placeholder="Klik tombol + untuk memilih/tambah" style="cursor: pointer;" onclick="openSearchModal()">
+                                
+                                <!-- Tombol Plus -->
+                                <button type="button" class="btn-add-customer" title="Cari / Tambah Konsumen" onclick="openSearchModal()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
-                        <small style="display:block; margin-top:5px; color:#888; font-size:12px;">Klik tombol + atau kolom nama untuk memilih pelanggan</small>
+                    </div>
+
+                    <!-- 2. Identitas Perangkat -->
+                    <div class="form-section" style="flex-grow: 1;">
+                        <h4><i class="fas fa-mobile-alt"></i> Identitas Perangkat</h4>
+                        <div class="form-group">
+                            <label>Merek <span style="color:red">*</span></label>
+                            <input type="text" name="merek_hp" class="form-control" required placeholder="Apple, Samsung, dll">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipe <span style="color:red">*</span></label>
+                            <input type="text" name="tipe_hp" class="form-control" required placeholder="iPhone 13, S23 Ultra">
+                        </div>
+                        <div class="form-group">
+                            <label>IMEI / SN <span style="color:red">*</span></label>
+                            <input type="text" name="imei_sn" class="form-control" required placeholder="Scan atau ketik manual">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Detail Kerusakan -->
-                <div class="form-section" style="margin-top: 24px;">
-                    <h4><i class="fas fa-tools"></i> Detail Service</h4>
-                    
-                    <div class="form-group">
-                        <label>Keluhan / Kerusakan <span style="color:red">*</span></label>
-                        <textarea id="kerusakan" name="kerusakan" class="form-control" rows="3" required placeholder="Jelaskan kerusakan perangkat..."></textarea>
-                    </div>
+                <!-- KOLOM KANAN: Detail Service -->
+                <div class="right-column-wrapper">
+                    <div class="form-section" style="height: 100%;">
+                        <h4><i class="fas fa-tools"></i> Detail Service</h4>
+                        
+                        <div class="form-group">
+                            <label>Keluhan / Kerusakan <span style="color:red">*</span></label>
+                            <textarea id="kerusakan" name="kerusakan" class="form-control" rows="4" required placeholder="Jelaskan detail kerusakan perangkat..."></textarea>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Kelengkapan <span style="color:red">*</span></label>
-                        <textarea name="kelengkapan" class="form-control" rows="2" required placeholder="Contoh: Unit + Charger + Dus"></textarea>
-                    </div>
+                        <div class="form-group">
+                            <label>Kelengkapan <span style="color:red">*</span></label>
+                            <textarea name="kelengkapan" class="form-control" rows="3" required placeholder="Unit, Dus, Charger, dll..."></textarea>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Teknisi Penanggung Jawab <span style="color:red">*</span></label>
-                        <select name="teknisi_id" class="form-control" required>
-                            <option value="">--- Pilih Teknisi ---</option>
-                            <?php foreach($teknisi as $tech): ?>
-                            <option value="<?php echo $tech['id']; ?>"><?php echo htmlspecialchars($tech['nama']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KOLOM KANAN: Perangkat & Biaya -->
-            <div class="right-column">
-                <!-- Section 3: Identitas Perangkat -->
-                <div class="form-section mb-4">
-                    <h4><i class="fas fa-mobile-alt"></i> Identitas Perangkat</h4>
-                    
-                    <div class="form-group">
-                        <label>Merek Handphone <span style="color:red">*</span></label>
-                        <input type="text" name="merek_hp" class="form-control" required placeholder="Contoh: Apple, Samsung">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Tipe Handphone <span style="color:red">*</span></label>
-                        <input type="text" name="tipe_hp" class="form-control" required placeholder="Contoh: iPhone 13 Pro">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nomor IMEI / Serial Number <span style="color:red">*</span></label>
-                        <input type="text" name="imei_sn" class="form-control" required placeholder="Masukkan IMEI atau SN">
+                        <div class="form-group">
+                            <label>Teknisi Penanggung Jawab <span style="color:red">*</span></label>
+                            <select name="teknisi_id" class="form-control" required>
+                                <option value="">--- Pilih Teknisi ---</option>
+                                <?php foreach($teknisi as $tech): ?>
+                                <option value="<?php echo $tech['id']; ?>"><?php echo htmlspecialchars($tech['nama']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 4: Garansi & Pembayaran -->
-                <div class="form-section" style="margin-top: 24px;">
-                    <h4><i class="fas fa-file-invoice-dollar"></i> Garansi & Pembayaran</h4>
-                    
+            </div> <!-- End Grid Top -->
+
+            <!-- BAGIAN BAWAH (Full Width): Garansi & Pembayaran -->
+            <div class="form-section bottom-row-section">
+                <h4><i class="fas fa-file-invoice-dollar"></i> Garansi & Pembayaran</h4>
+                
+                <div class="payment-grid">
+                    <!-- Item 1: Klaim Garansi -->
                     <div class="form-group">
                         <label>Klaim Garansi?</label>
                         <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" id="garansi_no" name="garansi" value="tidak" checked>
-                                <span>Tidak</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" id="garansi_yes" name="garansi" value="ya">
-                                <span>Ya</span>
-                            </label>
+                            <label class="radio-item"><input type="radio" id="garansi_no" name="garansi" value="tidak" checked> Tidak</label>
+                            <label class="radio-item"><input type="radio" id="garansi_yes" name="garansi" value="ya"> Ya</label>
                         </div>
                     </div>
 
+                    <!-- Item 2: Durasi Garansi -->
                     <div class="form-group">
                         <label>Durasi Garansi Toko</label>
-                        <div class="input-group">
-                            <input type="number" name="durasi_garansi_val" value="0" class="form-control" style="flex: 1;">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" name="durasi_garansi_val" value="0" class="form-control" style="width: 70px;">
                             <select name="durasi_garansi_unit" class="form-control" style="flex: 1;">
                                 <option>Hari</option>
                                 <option>Minggu</option>
                                 <option>Bulan</option>
-                                <option>Tahun</option>
                             </select>
                         </div>
                     </div>
 
+                    <!-- Item 3: Catatan -->
                     <div class="form-group">
-                        <label>Catatan Tambahan (Keterangan)</label>
-                        <textarea name="keterangan" class="form-control" rows="2" placeholder="Catatan untuk teknisi atau kasir..."></textarea>
+                        <label>Catatan (Keterangan)</label>
+                        <input type="text" name="keterangan" class="form-control" placeholder="Note kasir...">
                     </div>
 
+                    <!-- Item 4: Uang Muka -->
                     <div class="form-group">
                         <label>Uang Muka (DP)</label>
-                        <div class="input-group">
-                            <span style="padding: 12px; background: #eee; border: 1px solid #d1d1d6; border-right: none; border-radius: 8px 0 0 8px;">Rp</span>
+                        <div style="display: flex; align-items: center;">
+                            <span style="padding: 0 10px; background: #eee; border: 1px solid #d1d1d6; border-right: none; height: 42px; display: flex; align-items: center; border-radius: 8px 0 0 8px;">Rp</span>
                             <input type="number" name="uang_muka" value="0" class="form-control" style="border-radius: 0 8px 8px 0;">
                         </div>
                     </div>
 
+                    <!-- Item 5: Metode -->
                     <div class="form-group">
                         <label>Metode Pembayaran</label>
                         <select name="metode_pembayaran" class="form-control">
                             <option value="cash">Cash</option>
-                            <option value="credit">Credit / Transfer</option>
+                            <option value="credit">Transfer / Debit</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Footer Tombol Submit -->
+            <!-- Footer -->
             <div class="form-footer">
                 <button type="submit" name="create_order" class="btn-submit">
-                    <i class="fas fa-check-circle"></i> BUAT ORDER SERVICE
+                    <i class="fas fa-save"></i> BUAT ORDER SERVICE
                 </button>
             </div>
+
         </div>
     </form>
 </div>
 
-<!-- MODAL 1: SEARCH & SELECT CUSTOMER (BARU) -->
+<!-- MODAL 1: SEARCH & SELECT CUSTOMER -->
 <div id="searchCustomerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -443,15 +394,15 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <input type="text" id="search_customer_input" class="form-control" placeholder="Cari nama atau nomor HP..." onkeyup="filterCustomers()">
+                <input type="text" id="search_customer_input" class="form-control" placeholder="Cari nama atau nomor HP..." onkeyup="filterCustomers()" autofocus>
             </div>
             
             <div class="customer-list" id="customerListContainer">
-                <!-- List akan diisi oleh Javascript -->
+                <!-- List via JS -->
             </div>
 
             <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
-                <p style="margin-bottom: 10px; color: #666;">Konsumen belum terdaftar?</p>
+                <p style="margin-bottom: 10px; color: #666; font-size: 13px;">Konsumen belum terdaftar?</p>
                 <button type="button" class="btn btn-primary" onclick="openAddCustomerModal()">
                     <i class="fas fa-user-plus"></i> Tambah Konsumen Baru
                 </button>
@@ -460,7 +411,7 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
     </div>
 </div>
 
-<!-- MODAL 2: TAMBAH CUSTOMER BARU (SUDAH ADA, DIMODIFIKASI DIKIT) -->
+<!-- MODAL 2: TAMBAH CUSTOMER BARU -->
 <div id="addCustomerModal" class="modal">
     <div class="modal-content">
         <form id="addCustomerForm">
@@ -471,7 +422,7 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
             <div class="modal-body">
                 <div class="form-group">
                     <label>Nama Lengkap <span style="color:red">*</span></label>
-                    <input type="text" id="new_customer_nama" class="form-control" required placeholder="Nama sesuai KTP/Panggilan">
+                    <input type="text" id="new_customer_nama" class="form-control" required placeholder="Nama sesuai KTP">
                 </div>
                 <div class="form-group">
                     <label>Kontak (WhatsApp) <span style="color:red">*</span></label>
@@ -483,12 +434,12 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                 </div>
                 <div class="form-group">
                     <label>Keluhan Awal <span style="color:red">*</span></label>
-                    <textarea id="new_customer_keluhan" class="form-control" rows="2" required placeholder="Keluhan yang disampaikan pelanggan..."></textarea>
+                    <textarea id="new_customer_keluhan" class="form-control" rows="2" required placeholder="Keluhan pelanggan..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary close-btn" onclick="closeAddCustomerModal()" style="background: #e5e5ea; color: #333;">Batal</button>
-                <button type="submit" class="btn btn-primary" style="background: #007aff; color: white; border: none;">Simpan Pelanggan</button>
+                <button type="submit" class="btn btn-primary" style="background: #007aff; color: white; border: none;">Simpan</button>
             </div>
         </form>
     </div>
@@ -498,18 +449,14 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
 
 <!-- Skrip JavaScript -->
 <script>
-// Data Pelanggan dari PHP ke JS
 const customersData = <?php echo json_encode($customers); ?>;
-
-// DOM Elements
 const searchModal = document.getElementById('searchCustomerModal');
 const addModal = document.getElementById('addCustomerModal');
 const customerListContainer = document.getElementById('customerListContainer');
 
-// --- FUNGSI MODAL ---
 function openSearchModal() {
     searchModal.style.display = 'flex';
-    renderCustomerList(customersData); // Render semua saat dibuka
+    renderCustomerList(customersData);
     document.getElementById('search_customer_input').focus();
 }
 
@@ -518,7 +465,7 @@ function closeSearchModal() {
 }
 
 function openAddCustomerModal() {
-    closeSearchModal(); // Tutup modal cari dulu
+    closeSearchModal(); 
     addModal.style.display = 'flex';
 }
 
@@ -526,7 +473,6 @@ function closeAddCustomerModal() {
     addModal.style.display = 'none';
 }
 
-// --- LOGIKA SEARCH & SELECT ---
 function renderCustomerList(data) {
     customerListContainer.innerHTML = '';
     if (data.length === 0) {
@@ -542,7 +488,7 @@ function renderCustomerList(data) {
                 <div class="cust-name">${c.nama}</div>
                 <div class="cust-contact">${c.no_hp}</div>
             </div>
-            <i class="fas fa-chevron-right" style="color:#ccc;"></i>
+            <i class="fas fa-chevron-right" style="color:#ccc; font-size: 12px;"></i>
         `;
         item.onclick = () => selectCustomer(c);
         customerListContainer.appendChild(item);
@@ -559,27 +505,17 @@ function filterCustomers() {
 }
 
 function selectCustomer(customer) {
-    // Isi form utama
     document.getElementById('customer_id').value = customer.id;
     document.getElementById('customer_display_name').value = customer.nama;
-    
-    // Hapus kode pengisian detail kontak & alamat karena formnya sudah dihapus
-    // document.getElementById('customer_kontak').value = customer.no_hp;
-    // document.getElementById('customer_alamat').value = customer.alamat || '';
-    
     closeSearchModal();
 }
 
-// --- EVENT LISTENER UTAMA ---
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Close modal when clicking outside
     window.addEventListener('click', (e) => {
         if (e.target === searchModal) closeSearchModal();
         if (e.target === addModal) closeAddCustomerModal();
     });
     
-    // Form Tambah Customer
     document.getElementById('addCustomerForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const nama = document.getElementById('new_customer_nama').value;
@@ -600,21 +536,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Tambahkan ke data lokal JS
                 const newCust = data.customer;
                 customersData.push(newCust);
-                
-                // Langsung pilih customer baru
                 selectCustomer(newCust);
-                
-                // Isi keluhan otomatis karena baru diinput
                 document.getElementById('kerusakan').value = keluhan;
-
                 closeAddCustomerModal();
                 document.getElementById('addCustomerForm').reset();
-                // alert('Pelanggan berhasil ditambahkan!'); // Opsional, biar lebih smooth gak usah alert
             } else {
-                alert('Gagal menambahkan pelanggan: ' + data.message);
+                alert('Gagal: ' + data.message);
             }
         })
         .catch(error => {
