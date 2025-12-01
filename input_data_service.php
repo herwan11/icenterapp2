@@ -318,16 +318,7 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Kontak (WhatsApp)</label>
-                        <input type="text" id="customer_kontak" class="form-control" readonly placeholder="Otomatis terisi...">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Alamat</label>
-                        <textarea id="customer_alamat" class="form-control" rows="2" readonly placeholder="Otomatis terisi..."></textarea>
+                        <small style="display:block; margin-top:5px; color:#888; font-size:12px;">Klik tombol + atau kolom nama untuk memilih pelanggan</small>
                     </div>
                 </div>
 
@@ -571,12 +562,11 @@ function selectCustomer(customer) {
     // Isi form utama
     document.getElementById('customer_id').value = customer.id;
     document.getElementById('customer_display_name').value = customer.nama;
-    document.getElementById('customer_kontak').value = customer.no_hp;
-    document.getElementById('customer_alamat').value = customer.alamat || '';
     
-    // Isi keluhan jika ada (opsional, mungkin teknisi mau input ulang)
-    // document.getElementById('kerusakan').value = customer.keluhan || ''; 
-
+    // Hapus kode pengisian detail kontak & alamat karena formnya sudah dihapus
+    // document.getElementById('customer_kontak').value = customer.no_hp;
+    // document.getElementById('customer_alamat').value = customer.alamat || '';
+    
     closeSearchModal();
 }
 
