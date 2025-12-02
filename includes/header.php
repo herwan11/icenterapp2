@@ -111,6 +111,8 @@ if ($result_counts) {
 
                 <!-- Menu Customers -->
                 <a href="customers.php" class="nav-link"><i class="fas fa-users fa-fw"></i> <span>Customers</span></a>
+                <!-- MENU BARU: SUPLIER -->
+                <a href="suplier.php" class="nav-link"><i class="fas fa-truck fa-fw"></i> <span>Suplier</span></a>
 
 
                 <!-- ====================================================== -->
