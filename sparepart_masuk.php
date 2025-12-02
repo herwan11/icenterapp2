@@ -9,9 +9,10 @@ if (get_user_role() !== 'owner' && get_user_role() !== 'admin') {
     exit();
 }
 
+$is_owner = (get_user_role() === 'owner');
 $message = '';
 
-// --- Proses Penyimpanan Data ---
+// --- Proses Penyimpanan Data (Restock) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_stok'])) {
     $code_sparepart = $_POST['code_sparepart'];
     $jumlah = intval($_POST['jumlah']);
@@ -47,6 +48,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_stok'])) {
     }
 }
 
+// --- Proses Hapus Riwayat (KHUSUS OWNER) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_riwayat']) && $is_owner) {
+    $ids_to_delete = $_POST['selected_ids'] ?? [];
+
+    if (!empty($ids_to_delete)) {
+        $conn->begin_transaction();
+        try {
+            $success_count = 0;
+            foreach ($ids_to_delete as $id_masuk) {
+                // 1. Ambil info transaksi dulu untuk tahu berapa stok yang harus ditarik kembali
+                $stmt_get = $conn->prepare("SELECT code_sparepart, jumlah FROM sparepart_masuk WHERE id = ?");
+                $stmt_get->bind_param("i", $id_masuk);
+                $stmt_get->execute();
+                $trx_data = $stmt_get->get_result()->fetch_assoc();
+
+                if ($trx_data) {
+                    $code = $trx_data['code_sparepart'];
+                    $qty_to_remove = $trx_data['jumlah'];
+
+                    // 2. Kurangi Stok di Master Sparepart (Reversal)
+                    $stmt_revert = $conn->prepare("UPDATE master_sparepart SET stok_tersedia = stok_tersedia - ? WHERE code_sparepart = ?");
+                    $stmt_revert->bind_param("is", $qty_to_remove, $code);
+                    if (!$stmt_revert->execute()) {
+                        throw new Exception("Gagal mengembalikan stok untuk ID $id_masuk");
+                    }
+
+                    // 3. Hapus Log dari sparepart_masuk
+                    $stmt_del = $conn->prepare("DELETE FROM sparepart_masuk WHERE id = ?");
+                    $stmt_del->bind_param("i", $id_masuk);
+                    if (!$stmt_del->execute()) {
+                        throw new Exception("Gagal menghapus log ID $id_masuk");
+                    }
+                    
+                    $success_count++;
+                }
+            }
+            
+            $conn->commit();
+            $message = "<div class='alert alert-success'>Berhasil menghapus $success_count riwayat restock. Stok fisik telah disesuaikan kembali.</div>";
+            
+        } catch (Exception $e) {
+            $conn->rollback();
+            $message = "<div class='alert alert-danger'>Gagal menghapus: " . $e->getMessage() . "</div>";
+        }
+    } else {
+        $message = "<div class='alert alert-danger'>Tidak ada item yang dipilih untuk dihapus.</div>";
+    }
+}
+
 // --- Ambil Data Sparepart untuk Dropdown ---
 $spareparts = [];
 $sql_part = "SELECT code_sparepart, nama, supplier_merek, stok_tersedia FROM master_sparepart ORDER BY code_sparepart ASC";
@@ -55,10 +105,9 @@ while ($row = $res_part->fetch_assoc()) {
     $spareparts[] = $row;
 }
 
-// --- Ambil Riwayat Masuk (SEMUA DATA untuk fitur search JS) ---
+// --- Ambil Riwayat Masuk ---
 $history = [];
-// Limit dihapus agar semua history termuat untuk pencarian lokal JS
-$sql_hist = "SELECT sm.*, ms.nama, ms.supplier_merek 
+$sql_hist = "SELECT sm.id, sm.tanggal_masuk, sm.code_sparepart, sm.jumlah, ms.nama, ms.supplier_merek 
              FROM sparepart_masuk sm 
              JOIN master_sparepart ms ON sm.code_sparepart = ms.code_sparepart 
              ORDER BY sm.tanggal_masuk DESC";
@@ -141,6 +190,21 @@ if ($res_hist) {
         color: #333;
     }
     .data-table tr:hover { background-color: #f5f5f7; }
+
+    /* Button Delete */
+    .btn-delete-selected {
+        background-color: var(--accent-danger);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        display: none; /* Hidden by default via JS */
+        font-size: 13px;
+        margin-right: 10px;
+    }
+    .btn-delete-selected:hover { background-color: #d63026; }
 </style>
 
 <h1 class="page-title">Input Sparepart Masuk (Restock)</h1>
@@ -198,54 +262,84 @@ if ($res_hist) {
 
 <!-- Tabel Riwayat Masuk -->
 <div class="glass-effect form-container">
-    <div class="table-header-row">
-        <h3 style="margin:0;">Riwayat Barang Masuk</h3>
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="historySearch" placeholder="Cari Tgl, Code, Nama..." onkeyup="filterHistory()">
-        </div>
-    </div>
     
-    <div class="table-scroll-wrapper">
-        <table class="data-table" id="historyTable">
-            <thead>
-                <tr>
-                    <th>Tanggal</th>
-                    <th>Code Sparepart</th>
-                    <th>Nama Barang</th>
-                    <th>Supplier</th>
-                    <th>Jumlah Masuk</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($history)): ?>
-                    <tr><td colspan="5" align="center">Belum ada data barang masuk.</td></tr>
-                <?php else: ?>
-                    <?php foreach ($history as $h): ?>
-                    <tr>
-                        <td><?php echo date('d M Y, H:i', strtotime($h['tanggal_masuk'])); ?></td>
-                        <td class="searchable"><?php echo htmlspecialchars($h['code_sparepart']); ?></td>
-                        <td class="searchable"><?php echo htmlspecialchars($h['nama']); ?></td>
-                        <td class="searchable"><?php echo htmlspecialchars($h['supplier_merek']); ?></td>
-                        <td style="color: var(--accent-success); font-weight: bold;">+<?php echo $h['jumlah']; ?></td>
-                    </tr>
-                    <?php endforeach; ?>
+    <!-- Form Pembungkus untuk Delete -->
+    <form method="POST" id="deleteForm" onsubmit="return confirm('Yakin ingin menghapus histori terpilih? Stok akan dikurangi kembali sesuai data yang dihapus.');">
+        
+        <div class="table-header-row">
+            <div style="display:flex; align-items:center;">
+                <h3 style="margin:0; margin-right: 20px;">Riwayat Barang Masuk</h3>
+                
+                <!-- Tombol Hapus (Hanya Owner) -->
+                <?php if ($is_owner): ?>
+                    <button type="submit" name="hapus_riwayat" id="btnDelete" class="btn-delete-selected">
+                        <i class="fas fa-trash-alt"></i> Hapus Terpilih
+                    </button>
                 <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="historySearch" placeholder="Cari Tgl, Code, Nama..." onkeyup="filterHistory()">
+            </div>
+        </div>
+        
+        <div class="table-scroll-wrapper">
+            <table class="data-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <!-- Checkbox Header (Hanya Owner) -->
+                        <?php if ($is_owner): ?>
+                            <th style="width: 40px; text-align:center;">
+                                <input type="checkbox" id="selectAll">
+                            </th>
+                        <?php endif; ?>
+
+                        <th>Tanggal</th>
+                        <th>Code Sparepart</th>
+                        <th>Nama Barang</th>
+                        <th>Supplier</th>
+                        <th>Jumlah Masuk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($history)): ?>
+                        <tr><td colspan="<?php echo $is_owner ? '6' : '5'; ?>" align="center">Belum ada data barang masuk.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($history as $h): ?>
+                        <tr>
+                            <!-- Checkbox Row (Hanya Owner) -->
+                            <?php if ($is_owner): ?>
+                                <td style="text-align:center;">
+                                    <input type="checkbox" name="selected_ids[]" value="<?php echo $h['id']; ?>" class="row-checkbox">
+                                </td>
+                            <?php endif; ?>
+
+                            <td><?php echo date('d M Y, H:i', strtotime($h['tanggal_masuk'])); ?></td>
+                            <td class="searchable"><?php echo htmlspecialchars($h['code_sparepart']); ?></td>
+                            <td class="searchable"><?php echo htmlspecialchars($h['nama']); ?></td>
+                            <td class="searchable"><?php echo htmlspecialchars($h['supplier_merek']); ?></td>
+                            <td style="color: var(--accent-success); font-weight: bold;">+<?php echo $h['jumlah']; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+    </form>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Logic Auto-Fill Form ---
     const selectPart = document.getElementById('select_sparepart');
     const inputNama = document.getElementById('info_nama');
     const inputSupplier = document.getElementById('info_supplier');
     const inputStokAwal = document.getElementById('info_stok_awal');
 
-    // Event saat dropdown berubah (Auto-fill info)
     selectPart.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         
@@ -263,6 +357,38 @@ document.addEventListener('DOMContentLoaded', function() {
             inputStokAwal.value = '';
         }
     });
+
+    // --- Logic Select All & Delete Button Visibility (Hanya jalan jika elemen ada/owner) ---
+    const selectAllCb = document.getElementById('selectAll');
+    const rowCbs = document.querySelectorAll('.row-checkbox');
+    const btnDelete = document.getElementById('btnDelete');
+
+    if (selectAllCb && btnDelete) {
+        // Toggle Select All
+        selectAllCb.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCbs.forEach(cb => {
+                // Hanya check yang barisnya terlihat (kalau sedang difilter search)
+                if (cb.closest('tr').style.display !== 'none') {
+                    cb.checked = isChecked;
+                }
+            });
+            toggleDeleteBtn();
+        });
+
+        // Toggle Single Row
+        rowCbs.forEach(cb => {
+            cb.addEventListener('change', function() {
+                toggleDeleteBtn();
+                if (!this.checked) selectAllCb.checked = false;
+            });
+        });
+
+        function toggleDeleteBtn() {
+            const anyChecked = Array.from(rowCbs).some(cb => cb.checked);
+            btnDelete.style.display = anyChecked ? 'inline-block' : 'none';
+        }
+    }
 });
 
 // Fungsi Filter Pencarian Tabel
@@ -272,20 +398,45 @@ function filterHistory() {
     const table = document.getElementById('historyTable');
     const tr = table.getElementsByTagName('tr');
 
+    // Reset select all jika sedang searching
+    const selectAllCb = document.getElementById('selectAll');
+    if(selectAllCb) selectAllCb.checked = false;
+
     for (let i = 1; i < tr.length; i++) { // Mulai dari 1 untuk skip header
         let found = false;
-        // Cari di semua kolom dalam baris tersebut
+        // Cari di kolom yang relevan (skip checkbox col index 0 jika owner)
         const tds = tr[i].getElementsByTagName('td');
+        
+        // Loop kolom
         for (let j = 0; j < tds.length; j++) {
+            // Hindari pencarian di kolom checkbox (biasanya index 0 kalau owner)
+            if (tds[j].querySelector('input[type="checkbox"]')) continue;
+
             if (tds[j]) {
                 const txtValue = tds[j].textContent || tds[j].innerText;
                 if (txtValue.toLowerCase().indexOf(filter) > -1) {
                     found = true;
-                    break; // Jika ketemu di salah satu kolom, tampilkan baris
+                    break; 
                 }
             }
         }
-        tr[i].style.display = found ? "" : "none";
+        
+        if (found) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+            // Uncheck hidden rows agar tidak ikut terhapus tidak sengaja
+            const hiddenCb = tr[i].querySelector('.row-checkbox');
+            if(hiddenCb) hiddenCb.checked = false;
+        }
+    }
+    
+    // Re-check button visibility
+    const btnDelete = document.getElementById('btnDelete');
+    const rowCbs = document.querySelectorAll('.row-checkbox');
+    if(btnDelete && rowCbs.length > 0) {
+        const anyChecked = Array.from(rowCbs).some(cb => cb.checked);
+        btnDelete.style.display = anyChecked ? 'inline-block' : 'none';
     }
 }
 </script>
