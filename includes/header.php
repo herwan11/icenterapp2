@@ -123,6 +123,7 @@ if ($result_counts) {
                         <div class="dropdown-content">
                             <!-- MENAMBAHKAN LINK DASHBOARD SPAREPART -->
                             <a href="sparepart_dashboard.php" class="nav-link sub-item">Dashboard</a>
+                            <a href="sparepart_masuk.php" class="nav-link sub-item">Sparepart Masuk</a>
                             <a href="stok_sparepart.php" class="nav-link sub-item">Stok Sparepart</a>
                             <a href="penjualan_sparepart_view.php" class="nav-link sub-item">Penjualan Sparepart</a>
                         </div>
