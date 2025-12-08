@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 02, 2025 at 03:35 PM
+-- Generation Time: Dec 08, 2025 at 03:57 PM
 -- Server version: 11.4.8-MariaDB-cll-lve
 -- PHP Version: 8.4.14
 
@@ -131,10 +131,7 @@ CREATE TABLE `master_sparepart` (
 --
 
 INSERT INTO `master_sparepart` (`id`, `code_sparepart`, `nama`, `model`, `kategori`, `satuan`, `harga_beli`, `harga_jual`, `supplier_merek`, `stok_tersedia`, `stok_minimum`, `created_at`) VALUES
-(1, 'SP-001-A', 'LCD', '6203ZZ', 'Mekanik', 'pcs', 15000.00, 20000.00, 'SKF', 10, 5, '2025-08-27 09:27:31'),
-(2, 'SP-002-B', 'Batre', 'PT100', 'Elektrikal', 'pcs', 85000.00, 110000.00, 'Omron', 8, 5, '2025-08-27 09:27:31'),
-(3, 'SP-003-C', 'Camera', 'SV-12', 'Pneumatik', 'pcs', 125000.00, 160000.00, 'SMC', 19, 5, '2025-08-27 09:27:31'),
-(4, 'SP-005-CC', 'Front Camera', 'XXXX', 'Kamera', 'pcs', 20000.00, 50000.00, 'BRPart', 5, 5, '2025-12-02 08:07:39');
+(5, 'SP-C-0001', 'Kamera Depan', 'xxxxxx', 'Kamera Oppo', 'pcs', 50000.00, 70000.00, 'CV. Sparepart KW mas', 9, 5, '2025-12-02 09:00:23');
 
 -- --------------------------------------------------------
 
@@ -160,8 +157,7 @@ INSERT INTO `pelanggan` (`id`, `nama`, `no_hp`, `alamat`, `keluhan`) VALUES
 (3, 'Citra Dewi', '081234567892', 'Jl. Anggrek No. 3', 'Ganti baterai iPhone'),
 (4, 'Hamka', '08123456789', 'dimana saja', 'HP tidak bisa rekam bokep'),
 (5, 'labaco', '082194486847', 'pangkep', 'Tidak bisa pinjol'),
-(6, 'ibu sisil', '12345', 'taumi', 'banyak seklai'),
-(7, 'Nurjannah', '0895330897971', 'Jl sultan Hasanuddin', 'Matol');
+(6, 'ibu sisil', '12345', 'taumi', 'banyak seklai');
 
 -- --------------------------------------------------------
 
@@ -176,8 +172,17 @@ CREATE TABLE `pembelian_sparepart_luar` (
   `nama_sparepart` varchar(255) NOT NULL,
   `jumlah` int(11) NOT NULL,
   `harga_satuan` decimal(15,2) NOT NULL,
-  `total_harga` decimal(15,2) NOT NULL
+  `harga_jual` decimal(15,2) DEFAULT 0.00,
+  `total_harga` decimal(15,2) NOT NULL,
+  `total_jual` decimal(15,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pembelian_sparepart_luar`
+--
+
+INSERT INTO `pembelian_sparepart_luar` (`id_pembelian`, `invoice_service`, `tanggal_beli`, `nama_sparepart`, `jumlah`, `harga_satuan`, `harga_jual`, `total_harga`, `total_jual`) VALUES
+('SPL-251208-155036', 'INV-081225-142615', '2025-12-08 15:50:36', 'kolor', 1, 20000.00, 30000.00, 20000.00, 30000.00);
 
 -- --------------------------------------------------------
 
@@ -259,8 +264,10 @@ CREATE TABLE `service` (
 --
 
 INSERT INTO `service` (`invoice`, `tanggal`, `kasir_id`, `merek_hp`, `tipe_hp`, `imei_sn`, `kerusakan`, `kelengkapan`, `teknisi_id`, `customer_id`, `garansi`, `keterangan`, `durasi_garansi`, `sub_total`, `voucher_id`, `uang_muka`, `metode_pembayaran`, `status_pembayaran`, `status_service`, `total_bayar`) VALUES
+('INV-081225-141602', '2025-12-08 14:16:26', 5, 'sefsef', 'sfsfsef', 'sfsefsf', 'sfsfsefsfsf', 'sfsfsf', 4, 3, 'ya', 'sefseg', '10 Hari', 1270000.00, NULL, 50000.00, 'cash', 'Lunas', 'Diambil', 1220000.00),
+('INV-081225-142615', '2025-12-08 14:26:35', 5, 'sdgdsg', 'sgsdgs', 'sdgsdgds', 'gsdgsdg', 'sdgsdgsdg', 1, 2, 'ya', 'sdgsdg', '4 Hari', 140000.00, NULL, 100000.00, 'cash', 'Lunas', 'Diambil', 40000.00),
 ('INV-120925-184447', '2025-09-12 18:45:30', 5, '085554545454', 'm21', '648465464', 'HP cepat panas', 'cas, kartu dll', 4, 2, 'tidak', 'awdawdawdawd', '0 Hari', 1220000.00, NULL, 1220000.00, 'cash', 'Belum Lunas', 'Batal', 160000.00),
-('INV-120925-190314', '2025-09-12 19:04:12', 5, 'blackjack', 'm21', '543543434354', 'HP tidak bisa rekam bokep', 'slefjsejf;esf', 1, 4, 'tidak', 'wfwefwefwefwef', '0 Hari', 1660000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 0.00),
+('INV-120925-190314', '2025-09-12 19:04:12', 5, 'blackjack', 'm21', '543543434354', 'HP tidak bisa rekam bokep', 'slefjsejf;esf', 1, 4, 'tidak', 'wfwefwefwefwef', '0 Hari', 1500000.00, NULL, 0.00, 'cash', 'Lunas', 'Selesai', 0.00),
 ('INV-211125-150205', '2025-11-21 15:02:49', 1, 'ipongggg', 'm21', '543543434354', 'HP tidak bisa rekam bokep', 'awdawd', 1, 4, 'ya', 'awdwafaf', '7 Hari', 500000.00, NULL, 100000.00, 'cash', 'Belum Lunas', 'Batal', 900000.00),
 ('INV-251125-204214', '2025-11-25 20:48:09', 1, 'iphone', 'iphone 11', '136788', 'HP tidak bisa rekam bokep', '-', 4, 4, 'tidak', 'matol', '1 Hari', 100000.00, NULL, 0.00, 'cash', 'Belum Lunas', 'Refund', 120000.00),
 ('INV-270825-144044', '2025-08-27 14:49:22', 5, 'OVO', 'm21', '313216215656', 'mati total', 'simcard', 1, 3, 'tidak', '1234', '0 Day', 10000.00, NULL, 0.00, 'cash', 'Belum Lunas', 'Batal', 10000.00);
@@ -310,8 +317,7 @@ CREATE TABLE `sparepart_keluar` (
 --
 
 INSERT INTO `sparepart_keluar` (`id`, `tanggal_keluar`, `code_sparepart`, `nama_sparepart`, `satuan`, `jumlah`, `invoice_service`, `keterangan`) VALUES
-(13, '2025-11-18 15:50:27', 'SP-002-B', NULL, NULL, 2, 'DIRECT-P1-T251118155027', 'Penjualan Langsung ke Pelanggan ID: 1'),
-(17, '2025-11-28 15:52:38', 'SP-003-C', NULL, NULL, 1, 'INV-120925-190314', 'Ditambahkan saat proses service');
+(18, '2025-12-08 14:17:11', 'SP-C-0001', NULL, NULL, 1, 'INV-081225-141602', 'Ditambahkan saat proses service');
 
 -- --------------------------------------------------------
 
@@ -333,7 +339,7 @@ CREATE TABLE `sparepart_masuk` (
 --
 
 INSERT INTO `sparepart_masuk` (`id`, `tanggal_masuk`, `code_sparepart`, `nama_sparepart`, `satuan`, `jumlah`) VALUES
-(1, '2025-12-02 15:23:34', 'SP-003-C', NULL, NULL, 10);
+(2, '2025-12-02 16:00:56', 'SP-C-0001', NULL, NULL, 10);
 
 -- --------------------------------------------------------
 
@@ -349,6 +355,13 @@ CREATE TABLE `suplier` (
   `keterangan` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `suplier`
+--
+
+INSERT INTO `suplier` (`id`, `nama_suplier`, `kontak`, `alamat`, `keterangan`, `created_at`) VALUES
+(2, 'CV. Sparepart KW mas', '0821445667', 'wdwa awd awd awd aw', 'a wdwad ', '2025-12-02 08:58:59');
 
 -- --------------------------------------------------------
 
@@ -379,7 +392,17 @@ INSERT INTO `transaksi_kas` (`id`, `tanggal`, `jenis`, `jumlah`, `saldo_terakhir
 (11, '2025-11-18 15:50:27', 'masuk', 220000.00, 2220000.00, 'Penjualan Langsung: DIRECT-P1-T251118155027'),
 (12, '2025-11-21 15:10:12', 'keluar', 400000.00, 1820000.00, 'Beli sparepart luar: kolor untuk service INV-211125-150205'),
 (13, '2025-11-25 20:54:21', 'keluar', 10000.00, 1810000.00, 'bensin'),
-(14, '2025-11-28 15:35:20', 'masuk', 400000.00, 2210000.00, 'Refund pembelian sparepart luar untuk service INV-211125-150205');
+(14, '2025-11-28 15:35:20', 'masuk', 400000.00, 2210000.00, 'Refund pembelian sparepart luar untuk service INV-211125-150205'),
+(15, '2025-12-02 15:42:25', 'keluar', 220000.00, 1990000.00, 'Refund pembatalan Penjualan Langsung: DIRECT-P1-T251118155027'),
+(16, '2025-12-08 14:27:24', 'keluar', 20000.00, 1970000.00, 'Beli sparepart luar: kolor untuk service INV-081225-142615'),
+(17, '2025-12-08 14:28:35', 'masuk', 20000.00, 1990000.00, 'Refund pembelian sparepart luar untuk service INV-081225-142615'),
+(18, '2025-12-08 15:08:48', 'keluar', 20000.00, 1970000.00, 'Beli sparepart luar: kolor untuk service INV-081225-142615'),
+(19, '2025-12-08 15:10:51', 'masuk', 20000.00, 1990000.00, 'Refund pembelian sparepart luar untuk service INV-081225-142615'),
+(20, '2025-12-08 15:18:45', 'keluar', 20000.00, 1970000.00, 'Beli sparepart luar: kolor untuk service INV-081225-142615'),
+(21, '2025-12-08 15:32:50', 'masuk', 20000.00, 1990000.00, 'Refund pembelian sparepart luar untuk service INV-081225-142615'),
+(22, '2025-12-08 15:33:07', 'keluar', 20000.00, 1970000.00, 'Beli sparepart luar: kolor untuk service INV-081225-142615'),
+(23, '2025-12-08 15:50:25', 'masuk', 20000.00, 1990000.00, 'Refund pembelian sparepart luar untuk service INV-081225-142615'),
+(24, '2025-12-08 15:50:36', 'keluar', 20000.00, 1970000.00, 'Beli sparepart luar: kolor untuk service INV-081225-142615');
 
 -- --------------------------------------------------------
 
@@ -578,7 +601,7 @@ ALTER TABLE `komisi_karyawan`
 -- AUTO_INCREMENT for table `master_sparepart`
 --
 ALTER TABLE `master_sparepart`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `pelanggan`
@@ -608,25 +631,25 @@ ALTER TABLE `sparepart`
 -- AUTO_INCREMENT for table `sparepart_keluar`
 --
 ALTER TABLE `sparepart_keluar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `sparepart_masuk`
 --
 ALTER TABLE `sparepart_masuk`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `suplier`
 --
 ALTER TABLE `suplier`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `transaksi_kas`
 --
 ALTER TABLE `transaksi_kas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `users`
