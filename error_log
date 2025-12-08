@@ -76,3 +76,23 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in /home/icey4741/public_html/app/sparepart_dashboard.php on line 95
+[08-Dec-2025 15:47:30 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/penjualan_sparepart_view.php:31
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_view.php on line 31
+[08-Dec-2025 15:47:43 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/penjualan_sparepart_view.php:31
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_view.php on line 31
+[08-Dec-2025 15:47:45 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/penjualan_sparepart_view.php:31
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_view.php on line 31
+[08-Dec-2025 15:48:05 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/penjualan_sparepart_view.php:31
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_view.php on line 31
+[08-Dec-2025 15:51:55 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/penjualan_sparepart_view.php:31
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/penjualan_sparepart_view.php on line 31

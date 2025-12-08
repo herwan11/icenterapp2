@@ -10,23 +10,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
     $nama = $data['nama'] ?? null;
-    $no_hp = $data['kontak'] ?? null; // Nama field di frontend adalah 'kontak'
+    $kontak = $data['kontak'] ?? null; 
     $alamat = $data['alamat'] ?? '';
-    $keluhan = $data['keluhan'] ?? null;
+    // Tabel 'customers' di SQL Anda tidak punya kolom 'keluhan', jadi kita abaikan atau simpan di alamat jika perlu.
+    // Tapi untuk konsistensi, saya akan asumsikan kita pakai tabel 'pelanggan' yang punya 'keluhan' dan 'no_hp'.
+    
+    // TUNGGU DULU. Jika error DB bilang "REFERENCES customers", maka kita WAJIB pakai tabel 'customers'.
+    // Tapi tabel 'customers' di SQL Anda strukturnya: id, nama, alamat, kontak, created_at. TIDAK ADA 'keluhan'.
+    // Sedangkan tabel 'pelanggan' ada 'keluhan'.
+    
+    // INI KONFLIK. Solusi paling masuk akal: Anda mungkin salah relasi di DB. 
+    // Tapi saya tidak bisa ubah DB Anda secara langsung.
+    // Jadi saya akan mengubah kode ini untuk INSERT ke 'customers' agar error hilang.
+    // 'keluhan' akan saya gabung ke 'alamat' sementara atau diabaikan agar tidak error kolom hilang.
+    
+    $keluhan = $data['keluhan'] ?? '';
 
-    if ($nama && $no_hp && $keluhan) {
-        // Cek apakah kontak (no_hp) sudah ada di tabel pelanggan
-        $stmt_check = $conn->prepare("SELECT id FROM pelanggan WHERE no_hp = ?");
-        $stmt_check->bind_param("s", $no_hp);
+    if ($nama && $kontak) {
+        // Cek apakah kontak sudah ada di tabel customers
+        $stmt_check = $conn->prepare("SELECT id FROM customers WHERE kontak = ?");
+        $stmt_check->bind_param("s", $kontak);
         $stmt_check->execute();
         $result_check = $stmt_check->get_result();
 
         if ($result_check->num_rows > 0) {
             $response['message'] = 'Kontak sudah terdaftar.';
         } else {
-            // Simpan ke tabel 'pelanggan'
-            $stmt_insert = $conn->prepare("INSERT INTO pelanggan (nama, no_hp, alamat, keluhan) VALUES (?, ?, ?, ?)");
-            $stmt_insert->bind_param("ssss", $nama, $no_hp, $alamat, $keluhan);
+            // Simpan ke tabel 'customers' (Sesuai constraint Foreign Key service)
+            // Kolom di DB: nama, alamat, kontak
+            $stmt_insert = $conn->prepare("INSERT INTO customers (nama, kontak, alamat) VALUES (?, ?, ?)");
+            
+            // Jika keluhan penting, kita gabung ke alamat sementara: "$alamat (Keluhan: $keluhan)"
+            $alamat_full = $alamat . ($keluhan ? " [Keluhan Awal: $keluhan]" : "");
+            
+            $stmt_insert->bind_param("sss", $nama, $kontak, $alamat_full);
 
             if ($stmt_insert->execute()) {
                 $new_customer_id = $conn->insert_id;
@@ -36,23 +53,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'customer' => [
                         'id' => $new_customer_id,
                         'nama' => $nama,
-                        'kontak' => $no_hp,
+                        'kontak' => $kontak,
                         'alamat' => $alamat,
                         'keluhan' => $keluhan
                     ]
                 ];
             } else {
-                $response['message'] = 'Gagal menyimpan data ke database.';
+                $response['message'] = 'Gagal menyimpan data ke database: ' . $stmt_insert->error;
             }
             $stmt_insert->close();
         }
         $stmt_check->close();
     } else {
-        $response['message'] = 'Nama, Kontak, dan Keluhan wajib diisi.';
+        $response['message'] = 'Nama dan Kontak wajib diisi.';
     }
 }
 
 echo json_encode($response);
 $conn->close();
 ?>
-

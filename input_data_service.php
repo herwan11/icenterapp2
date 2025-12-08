@@ -46,9 +46,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
 }
 
 // --- Ambil Data untuk Dropdown ---
+// PERBAIKAN: Mengambil dari tabel 'customers' agar ID-nya valid untuk Foreign Key
+// Kolom di customers: id, nama, kontak, alamat
 $customers = [];
-$result_cust = $conn->query("SELECT id, nama, no_hp, alamat, keluhan FROM pelanggan ORDER BY nama ASC");
-while($row = $result_cust->fetch_assoc()){ $customers[] = $row; }
+$result_cust = $conn->query("SELECT id, nama, kontak as no_hp, alamat FROM customers ORDER BY nama ASC");
+while($row = $result_cust->fetch_assoc()){ 
+    // Kita tambahkan field dummy 'keluhan' agar JS tidak error, meski di DB customers tidak ada
+    $row['keluhan'] = ''; 
+    $customers[] = $row; 
+}
 
 $teknisi = [];
 $result_tech = $conn->query("SELECT id, nama FROM karyawan WHERE jabatan = 'Teknisi' ORDER BY nama ASC");

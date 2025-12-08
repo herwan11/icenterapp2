@@ -7,12 +7,15 @@ $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($id > 0) {
     // 1. Ambil Data Profil Pelanggan
-    $stmt = $conn->prepare("SELECT * FROM pelanggan WHERE id = ?");
+    // PERBAIKAN: Gunakan tabel 'customers'
+    $stmt = $conn->prepare("SELECT id, nama, alamat, kontak as no_hp FROM customers WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $customer = $stmt->get_result()->fetch_assoc();
 
     if ($customer) {
+        $customer['keluhan'] = ''; // Dummy field
+
         // 2. Ambil Riwayat Service (5 Terakhir)
         $services = [];
         $stmt_service = $conn->prepare("SELECT invoice, tanggal, merek_hp, tipe_hp, kerusakan, status_service, sub_total FROM service WHERE customer_id = ? ORDER BY tanggal DESC LIMIT 5");

@@ -19,115 +19,88 @@ if (isset($_GET['status'])) {
     }
 }
 
-// --- Logika untuk mengambil data yang dibutuhkan ---
-
-// Ambil daftar sparepart untuk dropdown penjualan
+// --- Data untuk Dropdown ---
 $spareparts_list = [];
-// Hanya ambil sparepart dengan stok tersedia > 0 
 $result_spareparts = $conn->query("SELECT code_sparepart, nama, harga_jual, stok_tersedia FROM master_sparepart WHERE stok_tersedia > 0 ORDER BY nama ASC");
 while($row = $result_spareparts->fetch_assoc()) {
     $spareparts_list[] = $row;
 }
 
-// Ambil daftar pelanggan
-// Mengambil data dari tabel pelanggan (sumber data customer yang aktif)
 $customers = [];
-$result_cust = $conn->query("SELECT id, nama, no_hp FROM pelanggan ORDER BY nama ASC");
+$result_cust = $conn->query("SELECT id, nama, no_hp FROM customers ORDER BY nama ASC"); // Pakai tabel 'customers'
 while($row = $result_cust->fetch_assoc()){ $customers[] = $row; }
 
 
-// --- Logika untuk Mengambil Semua Data Transaksi (Gabungan) ---
+// --- Logika UNION untuk Menggabungkan Semua Transaksi Sparepart ---
+// 1. Penggunaan Internal (Service)
+// 2. Penjualan Langsung (Direct)
+// 3. Penggunaan Eksternal (Service) - BARU DITAMBAHKAN
+
+$sql_union = "
+    SELECT * FROM (
+        -- 1. SPAREPART INTERNAL (Via Service & Direct)
+        SELECT
+            sk.id as id_transaksi,
+            sk.tanggal_keluar as tanggal,
+            CASE 
+                WHEN sk.invoice_service LIKE 'DIRECT-%' THEN 'Penjualan Langsung'
+                ELSE 'Penggunaan Service (Toko)'
+            END as tipe,
+            sk.invoice_service as referensi,
+            sk.code_sparepart,
+            ms.nama as nama_sparepart,
+            sk.jumlah,
+            ms.harga_jual as harga_satuan_jual,
+            (sk.jumlah * ms.harga_jual) as subtotal_jual,
+            CASE 
+                WHEN sk.invoice_service LIKE 'DIRECT-%' THEN 'Lunas'
+                ELSE s.status_pembayaran
+            END as status_bayar
+        FROM sparepart_keluar sk
+        JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart
+        LEFT JOIN service s ON sk.invoice_service = s.invoice
+
+        UNION ALL
+
+        -- 2. SPAREPART EKSTERNAL (Via Service)
+        SELECT
+            psl.id_pembelian as id_transaksi,
+            psl.tanggal_beli as tanggal,
+            'Penggunaan Service (Luar)' as tipe,
+            psl.invoice_service as referensi,
+            'EXTERNAL' as code_sparepart,
+            psl.nama_sparepart,
+            psl.jumlah,
+            psl.harga_jual as harga_satuan_jual,
+            psl.total_jual as subtotal_jual,
+            s.status_pembayaran as status_bayar
+        FROM pembelian_sparepart_luar psl
+        LEFT JOIN service s ON psl.invoice_service = s.invoice
+    ) AS gabungan
+    ORDER BY tanggal DESC
+";
+
 $transaksi_data = [];
+$result_all = $conn->query($sql_union);
 
-// 1. Data PENGGUNAAN SPAREPART SAAT SERVICE
-// Menghilangkan JOIN ke pelanggan untuk sementara, hanya fokus pada Invoice
-$sql_service = "SELECT
-    sk.id as id_transaksi,
-    sk.tanggal_keluar as tanggal,
-    'Penggunaan Service' as tipe,
-    s.invoice as pelanggan_identifier,
-    s.invoice as nama_pelanggan, /* Ganti dengan Invoice agar muncul di kolom */
-    sk.code_sparepart,
-    ms.nama as nama_sparepart,
-    sk.jumlah,
-    ms.harga_jual as harga_satuan,
-    (sk.jumlah * ms.harga_jual) as subtotal,
-    s.status_pembayaran
-FROM sparepart_keluar sk
-JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart
-LEFT JOIN service s ON sk.invoice_service = s.invoice
-/* HAPUS: LEFT JOIN pelanggan p ON s.customer_id = p.id */
-WHERE sk.invoice_service NOT LIKE 'DIRECT-%' 
-ORDER BY sk.tanggal_keluar DESC";
-
-
-// 2. Data PENJUALAN LANGSUNG (Diambil dari sparepart_keluar dengan flag unik)
-$sql_direct_sell = "SELECT
-    sk.id as id_transaksi,
-    sk.tanggal_keluar as tanggal,
-    'Penjualan Langsung' as tipe,
-    sk.invoice_service as pelanggan_identifier,
-    SUBSTRING_INDEX(SUBSTRING_INDEX(sk.invoice_service, 'P', -1), '-T', 1) as customer_id_str,
-    sk.code_sparepart,
-    ms.nama as nama_sparepart,
-    sk.jumlah,
-    ms.harga_jual as harga_satuan,
-    (sk.jumlah * ms.harga_jual) as subtotal,
-    'Lunas' as status_pembayaran 
-FROM sparepart_keluar sk
-JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart
-WHERE sk.invoice_service LIKE 'DIRECT-%'";
-
-
-// Menggabungkan hasil
-$temp_data = [];
-
-$result_service_usage = $conn->query($sql_service);
-if ($result_service_usage) {
-    while ($row = $result_service_usage->fetch_assoc()) {
-        $temp_data[] = $row;
-    }
-}
-
-$result_direct_sell = $conn->query($sql_direct_sell);
-if ($result_direct_sell) {
-    while ($row = $result_direct_sell->fetch_assoc()) {
-        // Ambil nama pelanggan dari ID yang di-encode di invoice_service
-        $customer_id = $row['customer_id_str'];
-        $customer_name = "ID Pelanggan: " . $customer_id; // Default jika gagal ambil nama
-        
-        $stmt_name = $conn->prepare("SELECT nama FROM pelanggan WHERE id = ?");
-        if (!$stmt_name) {
-            // Handle prepare error
+if ($result_all) {
+    while ($row = $result_all->fetch_assoc()) {
+        // Logika nama pelanggan
+        if (strpos($row['referensi'], 'DIRECT-') === 0) {
+            // Parse ID Customer dari string DIRECT-P{id}-T...
+            $parts = explode('-', $row['referensi']);
+            $cust_id_str = str_replace('P', '', $parts[1] ?? '');
+            
+            // Query nama customer (optional, bisa dioptimasi dengan JOIN tapi kompleks di UNION)
+            // Kita pakai placeholder sederhana atau query cepat jika perlu
+            $row['pelanggan_display'] = "Direct (ID: $cust_id_str)";
         } else {
-            $stmt_name->bind_param("i", $customer_id);
-            $stmt_name->execute();
-            $res_name = $stmt_name->get_result();
-            if ($res_name && $res_name->num_rows > 0) {
-                $customer_name = $res_name->fetch_assoc()['nama'];
-            }
+            // Invoice Service
+            $row['pelanggan_display'] = $row['referensi'];
         }
-
-
-        // Simpan data dengan nama pelanggan yang sudah didapat
-        $row['nama_pelanggan'] = $customer_name;
-        $temp_data[] = $row;
+        
+        $transaksi_data[] = $row;
     }
-}
-
-// Urutkan data berdasarkan tanggal di PHP
-usort($temp_data, function($a, $b) {
-    return strtotime($b['tanggal']) - strtotime($a['tanggal']);
-});
-
-$transaksi_data = $temp_data;
-
-
-// Ambil semua sparepart untuk modal edit (sama seperti di stok_sparepart.php)
-$all_spareparts = [];
-$result_all_parts = $conn->query("SELECT * FROM master_sparepart");
-while ($row = $result_all_parts->fetch_assoc()) {
-    $all_spareparts[] = $row;
 }
 
 $conn->close();
@@ -154,8 +127,11 @@ $conn->close();
     .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: .25rem; }
     .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
     .alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-    .badge-service { background-color: var(--accent-primary); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
-    .badge-jual { background-color: var(--accent-success); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+    
+    .badge-tipe { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; color: white; }
+    .bg-direct { background-color: var(--accent-success); }
+    .bg-service-toko { background-color: var(--accent-primary); }
+    .bg-service-luar { background-color: #ff9500; } /* Orange */
 
     /* Tombol Hapus */
     .btn-delete-selected {
@@ -272,18 +248,11 @@ $conn->close();
                     <?php else: ?>
                         <?php foreach ($transaksi_data as $data): ?>
                             <?php 
-                                $is_direct_sell = ($data['tipe'] == 'Penjualan Langsung'); 
+                                $tipe_class = 'bg-service-toko';
+                                if($data['tipe'] == 'Penjualan Langsung') $tipe_class = 'bg-direct';
+                                if($data['tipe'] == 'Penggunaan Service (Luar)') $tipe_class = 'bg-service-luar';
                                 
-                                // Tentukan apa yang ditampilkan di kolom Pelanggan/Invoice
-                                $pelanggan_invoice_display = htmlspecialchars($data['nama_pelanggan'] ?? 'N/A');
-                                if (!$is_direct_sell) {
-                                    // Untuk Penggunaan Service, tampilkan hanya Nomor Invoice
-                                    $pelanggan_invoice_display = htmlspecialchars($data['pelanggan_identifier'] ?? 'N/A');
-                                } else {
-                                    // Untuk Penjualan Langsung, tampilkan hanya nama pelanggan
-                                    // Logic ini sudah ada di proses data: $pelanggan_invoice_display = nama_pelanggan
-                                }
-
+                                $is_direct_sell = ($data['tipe'] == 'Penjualan Langsung');
                             ?>
                             <tr>
                                 <td>
@@ -296,19 +265,19 @@ $conn->close();
                                 <td><?php echo htmlspecialchars($data['id_transaksi']); ?></td>
                                 <td><?php echo date('d M Y, H:i', strtotime($data['tanggal'])); ?></td>
                                 <td>
-                                    <span class="<?php echo ($data['tipe'] == 'Penggunaan Service') ? 'badge-service' : 'badge-jual'; ?>">
+                                    <span class="badge-tipe <?php echo $tipe_class; ?>">
                                         <?php echo htmlspecialchars($data['tipe']); ?>
                                     </span>
                                 </td>
-                                <td><?php echo $pelanggan_invoice_display; ?></td>
+                                <td><?php echo htmlspecialchars($data['pelanggan_display']); ?></td>
                                 <td><?php echo htmlspecialchars($data['code_sparepart']); ?></td>
                                 <td><?php echo htmlspecialchars($data['nama_sparepart']); ?></td>
                                 <td class="text-right"><?php echo htmlspecialchars($data['jumlah']); ?></td>
-                                <td class="text-right"><?php echo number_format($data['harga_satuan'], 0, ',', '.'); ?></td>
-                                <td class="text-right"><strong><?php echo number_format($data['subtotal'], 0, ',', '.'); ?></strong></td>
+                                <td class="text-right"><?php echo number_format($data['harga_satuan_jual'], 0, ',', '.'); ?></td>
+                                <td class="text-right"><strong><?php echo number_format($data['subtotal_jual'], 0, ',', '.'); ?></strong></td>
                                 <td>
-                                    <span class="status-badge" style="background-color: <?php echo ($data['status_pembayaran'] == 'Lunas') ? 'var(--accent-success)' : 'var(--accent-danger)'; ?>; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px;">
-                                        <?php echo htmlspecialchars($data['status_pembayaran'] ?? 'N/A'); ?>
+                                    <span class="status-badge" style="background-color: <?php echo ($data['status_bayar'] == 'Lunas') ? 'var(--accent-success)' : 'var(--accent-danger)'; ?>; color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px;">
+                                        <?php echo htmlspecialchars($data['status_bayar'] ?? 'N/A'); ?>
                                     </span>
                                 </td>
                             </tr>

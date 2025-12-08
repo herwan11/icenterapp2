@@ -7,6 +7,7 @@ require_once 'includes/header.php';
 $status = isset($_GET['status']) ? htmlspecialchars($_GET['status']) : 'Antrian';
 
 // Query Utama
+// PERUBAHAN: Mengambil total_jual (bukan total_harga) dari pembelian_sparepart_luar
 $sql = "SELECT s.*, c.nama as nama_customer, k.nama as nama_teknisi,
         (
             COALESCE((SELECT SUM(sk.jumlah * ms.harga_jual) 
@@ -14,7 +15,7 @@ $sql = "SELECT s.*, c.nama as nama_customer, k.nama as nama_teknisi,
              JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart 
              WHERE sk.invoice_service = s.invoice), 0) 
             +
-            COALESCE((SELECT SUM(psl.total_harga) 
+            COALESCE((SELECT SUM(psl.total_jual) 
              FROM pembelian_sparepart_luar psl 
              WHERE psl.invoice_service = s.invoice), 0)
         ) as total_sparepart_calculated
@@ -294,7 +295,8 @@ while($row = $result_spareparts->fetch_assoc()) {
                      <div id="external" class="tab-content">
                          <form id="buyExternalForm">
                             <div class="form-group"><label>Nama Sparepart</label><input type="text" id="external_nama" class="form-control" required></div>
-                            <div class="form-group"><label>Harga Beli Satuan</label><input type="number" id="external_harga" class="form-control" required></div>
+                            <div class="form-group"><label>Harga Beli Satuan (Modal)</label><input type="number" id="external_harga_beli" class="form-control" required placeholder="Harga beli dari toko luar"></div>
+                            <div class="form-group"><label>Harga Jual Satuan (Ke Customer)</label><input type="number" id="external_harga_jual" class="form-control" required placeholder="Harga yang dibebankan ke customer"></div>
                              <div class="form-group"><label>Jumlah</label><input type="number" id="external_qty" value="1" min="1" class="form-control" required></div>
                             <button type="submit" class="btn btn-primary" style="width: 100%;">Beli & Gunakan</button>
                          </form>
@@ -521,7 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 invoice: currentInvoice,
                 nama: document.getElementById('external_nama').value,
-                harga: document.getElementById('external_harga').value,
+                harga_beli: document.getElementById('external_harga_beli').value,
+                harga_jual: document.getElementById('external_harga_jual').value,
                 jumlah: document.getElementById('external_qty').value
             })
         }).then(r=>r.json()).then(d=>{ if(d.success){ loadUsedParts(currentInvoice); this.reset(); } else alert(d.message); });

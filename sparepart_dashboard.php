@@ -12,141 +12,158 @@ if (get_user_role() !== 'owner' && get_user_role() !== 'admin') {
 
 // --- Logika untuk mengambil data dari database ---
 
-// Tentukan bulan dan tahun saat ini
 $bulan_sekarang = date('m');
 $tahun_sekarang = date('Y');
 
-// 1. Total Penjualan Sparepart Langsung (Hanya yang Lunas)
-$query_penjualan_langsung = "
-    SELECT SUM(sk.jumlah * ms.harga_jual) as total_penjualan
+// --- INDIKATOR KEUANGAN (Dipindahkan dari Repair Dashboard) ---
+
+// 1. Sparepart Toko (Internal) - Jual & Beli
+$query_internal = "
+    SELECT 
+        SUM(sk.jumlah * ms.harga_jual) as total_jual_internal,
+        SUM(sk.jumlah * ms.harga_beli) as total_beli_internal
     FROM sparepart_keluar sk
     JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart
-    WHERE sk.invoice_service LIKE 'DIRECT-%' 
-    AND MONTH(sk.tanggal_keluar) = ? 
-    AND YEAR(sk.tanggal_keluar) = ?";
-
-$stmt_langsung = $conn->prepare($query_penjualan_langsung);
-$stmt_langsung->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
-$stmt_langsung->execute();
-$result_langsung = $stmt_langsung->get_result()->fetch_assoc();
-$penjualan_langsung_lunas = $result_langsung['total_penjualan'] ?? 0;
-$stmt_langsung->close();
-
-// 2. Total Penggunaan Sparepart Service (Hanya dari Service yang Lunas) - Untuk perhitungan REVENUE
-$query_penggunaan_service = "
-    SELECT SUM(sk.jumlah * ms.harga_jual) as total_penggunaan
-    FROM sparepart_keluar sk
-    JOIN master_sparepart ms ON sk.code_sparepart = ms.code_sparepart
-    JOIN service s ON sk.invoice_service = s.invoice
-    WHERE sk.invoice_service NOT LIKE 'DIRECT-%' 
-    AND MONTH(sk.tanggal_keluar) = ? 
+    /* Filter: Mencakup Penjualan Langsung & Penggunaan Service */
+    /* Untuk service, kita ambil yang statusnya selesai/diambil agar valid sebagai penjualan */
+    LEFT JOIN service s ON sk.invoice_service = s.invoice
+    WHERE MONTH(sk.tanggal_keluar) = ? 
     AND YEAR(sk.tanggal_keluar) = ?
-    AND s.status_pembayaran = 'Lunas'"; // Tetap menggunakan Lunas untuk perhitungan pemasukan aktual
+    AND (
+        sk.invoice_service LIKE 'DIRECT-%' /* Penjualan Langsung */
+        OR (s.status_service = 'Diambil' AND s.status_pembayaran = 'Lunas') /* Service Selesai */
+    )";
 
-$stmt_service = $conn->prepare($query_penggunaan_service);
-$stmt_service->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
-$stmt_service->execute();
-$result_service = $stmt_service->get_result()->fetch_assoc();
-$penggunaan_service_lunas = $result_service['total_penggunaan'] ?? 0;
-$stmt_service->close();
+$stmt_internal = $conn->prepare($query_internal);
+$stmt_internal->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
+$stmt_internal->execute();
+$res_internal = $stmt_internal->get_result()->fetch_assoc();
+
+$part_toko_jual = $res_internal['total_jual_internal'] ?? 0;
+$part_toko_modal = $res_internal['total_beli_internal'] ?? 0;
+$stmt_internal->close();
 
 
-// 3. Total Nilai Stok Tersedia (Stok Saat Ini)
+// 2. Sparepart Luar (Eksternal) - Jual & Beli
+// Ambil Total Jual (Omset)
+$query_ext_jual = "
+    SELECT SUM(psl.total_jual) as total_jual_luar 
+    FROM pembelian_sparepart_luar psl
+    JOIN service s ON psl.invoice_service = s.invoice
+    WHERE MONTH(s.tanggal) = ? 
+    AND YEAR(s.tanggal) = ?
+    AND s.status_service = 'Diambil'
+    AND s.status_pembayaran = 'Lunas'";
+
+$stmt_ext_jual = $conn->prepare($query_ext_jual);
+$stmt_ext_jual->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
+$stmt_ext_jual->execute();
+$part_luar_jual = $stmt_ext_jual->get_result()->fetch_assoc()['total_jual_luar'] ?? 0;
+$stmt_ext_jual->close();
+
+// Ambil Total Beli (Modal) dari Transaksi Kas
+$query_ext_beli = "
+    SELECT SUM(jumlah) as total_modal_luar
+    FROM transaksi_kas
+    WHERE jenis = 'keluar'
+    AND keterangan LIKE 'Beli sparepart luar%'
+    AND MONTH(tanggal) = ? 
+    AND YEAR(tanggal) = ?";
+
+$stmt_ext_beli = $conn->prepare($query_ext_beli);
+$stmt_ext_beli->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
+$stmt_ext_beli->execute();
+$part_luar_modal = $stmt_ext_beli->get_result()->fetch_assoc()['total_modal_luar'] ?? 0;
+$stmt_ext_beli->close();
+
+
+// 3. Profit Bersih Sparepart
+// (Jual Toko - Modal Toko) + (Jual Luar - Modal Luar)
+$profit_sparepart = ($part_toko_jual - $part_toko_modal) + ($part_luar_jual - $part_luar_modal);
+
+
+// --- INDIKATOR LAIN (Yang sudah ada) ---
+// Total Nilai Stok Tersedia
 $query_stok_value = "SELECT SUM(stok_tersedia * harga_beli) as total_value FROM master_sparepart";
 $result_stok_value = $conn->query($query_stok_value)->fetch_assoc();
 $total_nilai_stok = $result_stok_value['total_value'] ?? 0;
 
 
-// 4. Hitung Total Pemasukan Sparepart (Lunas)
-$total_pemasukan_sparepart = $penjualan_langsung_lunas + $penggunaan_service_lunas;
-
-
-// 5. Hitung Nilai Modal (Asumsi laba kotor 40% dari penjualan total)
-$nilai_modal = $total_pemasukan_sparepart / 1.4; 
-$laba_kotor_sparepart = $total_pemasukan_sparepart - $nilai_modal; 
-$nilai_modal = $total_pemasukan_sparepart - $laba_kotor_sparepart; 
-
-// --- Data untuk Grafik (Jumlah Transaksi Harian) ---
+// --- Data Grafik Transaksi ---
 $jumlah_hari = date('t');
 $labels_harian = [];
 for ($i = 1; $i <= $jumlah_hari; $i++) {
     $labels_harian[] = $i;
 }
-
 $data_harian_transaksi = array_fill(0, $jumlah_hari, 0);
 
-// PERBAIKAN: Logika query grafik sekarang menghitung transaksi Penjualan Langsung (Lunas) 
-// DAN Penggunaan Service yang status perbaikannya sudah Selesai (siap tagih/sudah terpakai)
 $query_grafik = "
-    SELECT 
-        DAY(sk.tanggal_keluar) as hari, 
-        COUNT(sk.id) as total_harian
+    SELECT DAY(sk.tanggal_keluar) as hari, COUNT(sk.id) as total_harian
     FROM sparepart_keluar sk
-    LEFT JOIN service s ON sk.invoice_service = s.invoice
     WHERE MONTH(sk.tanggal_keluar) = ? AND YEAR(sk.tanggal_keluar) = ?
-    AND (
-        sk.invoice_service LIKE 'DIRECT-%'  /* Penjualan Langsung */
-        OR s.status_service = 'Selesai'      /* FIX: Menggunakan kolom status_service */
-    )
     GROUP BY DAY(sk.tanggal_keluar)";
-
 
 $stmt_grafik = $conn->prepare($query_grafik);
 $stmt_grafik->bind_param("ss", $bulan_sekarang, $tahun_sekarang);
 $stmt_grafik->execute();
 $result_grafik = $stmt_grafik->get_result();
-
 while ($row = $result_grafik->fetch_assoc()) {
-    $hari = (int)$row['hari'];
-    $total = (float)$row['total_harian'];
-    $data_harian_transaksi[$hari - 1] = $total;
+    $data_harian_transaksi[(int)$row['hari'] - 1] = (int)$row['total_harian'];
 }
 $stmt_grafik->close();
-
-$conn->close();
 ?>
 
 <!-- Sertakan library Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Konten Utama Halaman -->
-<h1 class="page-title">Dashboard Sparepart & Aksesori</h1>
+<h1 class="page-title">Dashboard Bisnis Sparepart</h1>
 
 <!-- Kartu Statistik -->
 <div class="stats-cards-service">
+    
+    <!-- Profit Bersih (Highlight Utama) -->
     <div class="card-service glass-effect" style="--accent-color: var(--accent-success);">
-        <div class="card-service-icon"><i class="fas fa-boxes"></i></div>
-        <div class="card-service-content">
-            <p>Total Nilai Stok (Modal)</p>
-            <h3>Rp <?php echo number_format($total_nilai_stok, 0, ',', '.'); ?></h3>
-        </div>
-    </div>
-    <div class="card-service glass-effect" style="--accent-color: var(--accent-primary);">
-        <div class="card-service-icon"><i class="fas fa-hand-holding-usd"></i></div>
-        <div class="card-service-content">
-            <p>Penjualan Langsung (Lunas)</p>
-            <h3>Rp <?php echo number_format($penjualan_langsung_lunas, 0, ',', '.'); ?></h3>
-        </div>
-    </div>
-    <div class="card-service glass-effect" style="--accent-color: #ff9500;">
-        <div class="card-service-icon"><i class="fas fa-tools"></i></div>
-        <div class="card-service-content">
-            <p>Penggunaan Service (Lunas)</p>
-            <h3>Rp <?php echo number_format($penggunaan_service_lunas, 0, ',', '.'); ?></h3>
-        </div>
-    </div>
-    <div class="card-service glass-effect" style="--accent-color: #34c759;">
         <div class="card-service-icon"><i class="fas fa-chart-line"></i></div>
         <div class="card-service-content">
-            <p>Laba Kotor Sparepart (Est.)</p>
-            <h3>Rp <?php echo number_format($laba_kotor_sparepart, 0, ',', '.'); ?></h3>
+            <p>Profit Bersih Sparepart</p>
+            <h3>Rp <?php echo number_format($profit_sparepart, 0, ',', '.'); ?></h3>
+        </div>
+    </div>
+
+    <!-- Sparepart Toko (Jual) -->
+    <div class="card-service glass-effect" style="--accent-color: var(--accent-primary);">
+        <div class="card-service-icon"><i class="fas fa-store"></i></div>
+        <div class="card-service-content">
+            <p>Penjualan Part Toko</p>
+            <h3>Rp <?php echo number_format($part_toko_jual, 0, ',', '.'); ?></h3>
+            <small style="color:#888;">Modal: Rp <?php echo number_format($part_toko_modal, 0, ',', '.'); ?></small>
+        </div>
+    </div>
+
+    <!-- Sparepart Luar (Jual) -->
+    <div class="card-service glass-effect" style="--accent-color: #ff9500;">
+        <div class="card-service-icon"><i class="fas fa-external-link-alt"></i></div>
+        <div class="card-service-content">
+            <p>Penjualan Part Luar</p>
+            <h3>Rp <?php echo number_format($part_luar_jual, 0, ',', '.'); ?></h3>
+            <small style="color:#888;">Modal: Rp <?php echo number_format($part_luar_modal, 0, ',', '.'); ?></small>
+        </div>
+    </div>
+
+    <!-- Nilai Aset Stok -->
+    <div class="card-service glass-effect" style="--accent-color: #5856d6;">
+        <div class="card-service-icon"><i class="fas fa-cubes"></i></div>
+        <div class="card-service-content">
+            <p>Nilai Aset Stok (Modal)</p>
+            <h3>Rp <?php echo number_format($total_nilai_stok, 0, ',', '.'); ?></h3>
         </div>
     </div>
 </div>
 
 <!-- Grafik -->
 <div class="chart-container glass-effect">
-    <h2 class="chart-title">Grafik Jumlah Transaksi Sparepart (Penjualan Langsung Lunas & Penggunaan Service Selesai) Bulan Ini</h2>
+    <h2 class="chart-title">Grafik Volume Transaksi Sparepart (Harian)</h2>
     <div class="chart-wrapper">
         <canvas id="sparepartChart"></canvas>
     </div>
@@ -156,17 +173,16 @@ $conn->close();
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('sparepartChart').getContext('2d');
     const sparepartChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: <?php echo json_encode($labels_harian); ?>,
             datasets: [{
-                label: 'Jumlah Transaksi Harian',
+                label: 'Jumlah Transaksi',
                 data: <?php echo json_encode($data_harian_transaksi); ?>,
-                backgroundColor: 'rgba(52, 199, 89, 0.4)',
+                backgroundColor: 'rgba(52, 199, 89, 0.6)',
                 borderColor: 'rgba(52, 199, 89, 1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true,
+                borderWidth: 1,
+                borderRadius: 4
             }]
         },
         options: {
@@ -175,41 +191,16 @@ document.addEventListener('DOMContentLoaded', function () {
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        color: '#636366',
-                        precision: 0 // Pastikan sumbu Y adalah bilangan bulat (jumlah transaksi)
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    }
+                    ticks: { precision: 0, color: '#636366' },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
                 },
                 x: {
-                    ticks: {
-                        color: '#636366'
-                    },
-                    grid: {
-                        display: false
-                    }
+                    ticks: { color: '#636366' },
+                    grid: { display: false }
                 }
             },
             plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat('id-ID').format(context.parsed.y) + ' Transaksi';
-                            }
-                            return label;
-                        }
-                    }
-                }
+                legend: { display: false }
             }
         }
     });
