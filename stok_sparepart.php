@@ -50,6 +50,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['simpan_sparepart'])) {
     }
 }
 
+// --- Ambil Data Suplier untuk Dropdown ---
+$list_suplier = [];
+$res_sup = $conn->query("SELECT nama_suplier FROM suplier ORDER BY nama_suplier ASC");
+if ($res_sup) {
+    while ($row = $res_sup->fetch_assoc()) {
+        $list_suplier[] = $row['nama_suplier'];
+    }
+}
+
 
 // --- Ambil SEMUA data dari database untuk ditampilkan di tabel ---
 $sparepart_data = [];
@@ -176,10 +185,18 @@ $conn->close();
                 <label for="harga_jual">Harga Jual (/pcs)</label>
                 <input type="number" id="harga_jual" name="harga_jual" value="0">
             </div>
+            
+            <!-- PERUBAHAN: Dropdown Suplier -->
             <div class="form-group">
-                <label for="supplier_merek">Supplier/Merek</label>
-                <input type="text" id="supplier_merek" name="supplier_merek">
+                <label for="supplier_merek">Suplier</label>
+                <select id="supplier_merek" name="supplier_merek">
+                    <option value="">-- Pilih Suplier --</option>
+                    <?php foreach ($list_suplier as $sup): ?>
+                        <option value="<?php echo htmlspecialchars($sup); ?>"><?php echo htmlspecialchars($sup); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
+
             <div class="form-group">
                 <label for="stok_tersedia">Stok Awal</label>
                 <input type="number" id="stok_tersedia" name="stok_tersedia" value="0">
@@ -212,6 +229,7 @@ $conn->close();
                         <th>Kategori</th>
                         <th>Harga Beli</th>
                         <th>Harga Jual</th>
+                        <th>Suplier</th>
                         <th>Stok</th>
                         <th>Stok Min.</th>
                     </tr>
@@ -219,11 +237,10 @@ $conn->close();
                 <tbody>
                     <?php if (empty($sparepart_data)): ?>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 20px;">Belum ada data sparepart.</td>
+                            <td colspan="9" style="text-align: center; padding: 20px;">Belum ada data sparepart.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($sparepart_data as $data): ?>
-                            <!-- PERBAIKAN LOGIKA DI SINI -->
                             <tr class="<?php echo ($data['stok_tersedia'] <= $data['stok_minimum']) ? 'stock-low' : ''; ?>">
                                 <td><input type="checkbox" name="selected_spareparts[]" value="<?php echo htmlspecialchars($data['code_sparepart']); ?>" class="row-checkbox"></td>
                                 <td><?php echo htmlspecialchars($data['code_sparepart']); ?></td>
@@ -231,6 +248,7 @@ $conn->close();
                                 <td><?php echo htmlspecialchars($data['kategori']); ?></td>
                                 <td><?php echo number_format($data['harga_beli'], 0, ',', '.'); ?></td>
                                 <td><?php echo number_format($data['harga_jual'], 0, ',', '.'); ?></td>
+                                <td><?php echo htmlspecialchars($data['supplier_merek']); ?></td>
                                 <td><?php echo htmlspecialchars($data['stok_tersedia']); ?></td>
                                 <td><?php echo htmlspecialchars($data['stok_minimum']); ?></td>
                             </tr>
