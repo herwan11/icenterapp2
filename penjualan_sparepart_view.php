@@ -27,14 +27,13 @@ while($row = $result_spareparts->fetch_assoc()) {
 }
 
 $customers = [];
-$result_cust = $conn->query("SELECT id, nama, no_hp FROM customers ORDER BY nama ASC"); // Pakai tabel 'customers'
+$result_cust = $conn->query("SELECT id, nama, kontak as no_hp FROM customers ORDER BY nama ASC"); // Pastikan pakai 'customers' dan 'kontak'
 while($row = $result_cust->fetch_assoc()){ $customers[] = $row; }
 
 
 // --- Logika UNION untuk Menggabungkan Semua Transaksi Sparepart ---
-// 1. Penggunaan Internal (Service)
-// 2. Penjualan Langsung (Direct)
-// 3. Penggunaan Eksternal (Service) - BARU DITAMBAHKAN
+// 1. Penggunaan Internal (Service) & Direct Sales
+// 2. Penggunaan Eksternal (Service)
 
 $sql_union = "
     SELECT * FROM (
@@ -64,7 +63,7 @@ $sql_union = "
 
         -- 2. SPAREPART EKSTERNAL (Via Service)
         SELECT
-            psl.id_pembelian as id_transaksi,
+            0 as id_transaksi, -- ID Pembelian varchar, kita set 0 atau hash nanti jika perlu
             psl.tanggal_beli as tanggal,
             'Penggunaan Service (Luar)' as tipe,
             psl.invoice_service as referensi,
@@ -90,9 +89,6 @@ if ($result_all) {
             // Parse ID Customer dari string DIRECT-P{id}-T...
             $parts = explode('-', $row['referensi']);
             $cust_id_str = str_replace('P', '', $parts[1] ?? '');
-            
-            // Query nama customer (optional, bisa dioptimasi dengan JOIN tapi kompleks di UNION)
-            // Kita pakai placeholder sederhana atau query cepat jika perlu
             $row['pelanggan_display'] = "Direct (ID: $cust_id_str)";
         } else {
             // Invoice Service

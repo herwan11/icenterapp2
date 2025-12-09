@@ -77,11 +77,6 @@ $part_luar_modal = $stmt_ext_beli->get_result()->fetch_assoc()['total_modal_luar
 $stmt_ext_beli->close();
 
 
-// 3. Profit Bersih Sparepart
-// (Jual Toko - Modal Toko) + (Jual Luar - Modal Luar)
-$profit_sparepart = ($part_toko_jual - $part_toko_modal) + ($part_luar_jual - $part_luar_modal);
-
-
 // --- INDIKATOR LAIN (Yang sudah ada) ---
 // Total Nilai Stok Tersedia
 $query_stok_value = "SELECT SUM(stok_tersedia * harga_beli) as total_value FROM master_sparepart";
@@ -122,15 +117,6 @@ $stmt_grafik->close();
 <!-- Kartu Statistik -->
 <div class="stats-cards-service">
     
-    <!-- Profit Bersih (Highlight Utama) -->
-    <div class="card-service glass-effect" style="--accent-color: var(--accent-success);">
-        <div class="card-service-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="card-service-content">
-            <p>Profit Bersih Sparepart</p>
-            <h3>Rp <?php echo number_format($profit_sparepart, 0, ',', '.'); ?></h3>
-        </div>
-    </div>
-
     <!-- Sparepart Toko (Jual) -->
     <div class="card-service glass-effect" style="--accent-color: var(--accent-primary);">
         <div class="card-service-icon"><i class="fas fa-store"></i></div>
