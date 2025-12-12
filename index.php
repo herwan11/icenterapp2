@@ -8,6 +8,7 @@ setlocale(LC_TIME, 'id_ID.UTF-8', 'Indonesian_Indonesia.1252');
 $bulan_tahun = date('F Y'); // Contoh: August 2025
 $bulan_ini = date('m');
 $tahun_ini = date('Y');
+$hari_ini = date('Y-m-d');
 
 // --- 1. Logika Ambil Saldo Kas ---
 $saldo_kas_saat_ini = 0;
@@ -114,7 +115,31 @@ $data_laporan = [
 $total_laba = array_sum(array_column($data_laporan, 'laba'));
 $total_pengeluaran = array_sum(array_column($data_laporan, 'pengeluaran'));
 $profit = $total_laba - $total_pengeluaran;
+
+// --- LOGIKA ABSENSI HARI INI (UPDATED: Termasuk Waktu Keluar) ---
+$absensi_list = [];
+$sql_absen = "SELECT u.nama, u.role, a.waktu_masuk, a.waktu_keluar 
+              FROM users u 
+              LEFT JOIN absensi a ON u.id = a.user_id AND a.tanggal = '$hari_ini'
+              WHERE u.role != 'owner' 
+              ORDER BY a.waktu_masuk DESC, u.nama ASC";
+$res_absen = $conn->query($sql_absen);
+if($res_absen) {
+    while($row = $res_absen->fetch_assoc()) {
+        $absensi_list[] = $row;
+    }
+}
 ?>
+
+<style>
+    .absensi-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .absensi-item:last-child { border-bottom: none; }
+    .absensi-status { font-size: 11px; padding: 4px 8px; border-radius: 12px; font-weight: 600; display: inline-block; text-align: center; min-width: 60px; }
+    .status-hadir { background: #d4edda; color: #155724; }
+    .status-pulang { background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+    .status-belum { background: #f8d7da; color: #721c24; }
+    .absensi-time { font-size: 12px; color: #666; margin-top: 4px; }
+</style>
 
 <!-- Konten Halaman Home dengan Layout Baru -->
 <div class="content-container">
@@ -182,6 +207,63 @@ $profit = $total_laba - $total_pengeluaran;
                     <p>SALDO SAAT INI</p>
                     <span style="font-size: 24px;">Rp <?php echo number_format($saldo_kas_saat_ini, 0, ',', '.'); ?></span>
                 </div>
+            </div>
+        </div>
+
+        <!-- === KARTU BARU: KEHADIRAN KARYAWAN === -->
+        <div class="summary-card glass-effect">
+            <h3 class="summary-title">Kehadiran Hari Ini (<?php echo date('d/m'); ?>)</h3>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <?php if(empty($absensi_list)): ?>
+                    <p style="text-align: center; color: #888;">Tidak ada data karyawan.</p>
+                <?php else: ?>
+                    <?php foreach($absensi_list as $absen): ?>
+                        <?php 
+                            $is_present = !empty($absen['waktu_masuk']);
+                            $is_out = !empty($absen['waktu_keluar']);
+                            
+                            $jam_masuk = $is_present ? date('H:i', strtotime($absen['waktu_masuk'])) : '-';
+                            $jam_keluar = $is_out ? date('H:i', strtotime($absen['waktu_keluar'])) : '-';
+                            
+                            // Hitung Durasi (Jika Hadir)
+                            $durasi_teks = '-';
+                            if ($is_present) {
+                                $start = new DateTime($absen['waktu_masuk']);
+                                $end = $is_out ? new DateTime($absen['waktu_keluar']) : new DateTime();
+                                $interval = $start->diff($end);
+                                $durasi_teks = $interval->format('%hJ %iM');
+                            }
+                        ?>
+                        <div class="absensi-item">
+                            <div>
+                                <div style="font-weight: 600; font-size: 13px;"><?php echo htmlspecialchars($absen['nama']); ?></div>
+                                <div class="absensi-time">
+                                    <?php if($is_present): ?>
+                                        <i class="fas fa-arrow-right" style="color:var(--accent-success)"></i> <?php echo $jam_masuk; ?> &nbsp;
+                                        <?php if($is_out): ?>
+                                            <i class="fas fa-arrow-left" style="color:var(--accent-danger)"></i> <?php echo $jam_keluar; ?>
+                                        <?php else: ?>
+                                            <span style="color: var(--accent-primary); font-size: 10px;">(Aktif)</span>
+                                        <?php endif; ?>
+                                        <br>
+                                        <span style="color: #888; font-size: 10px;">Durasi: <?php echo $durasi_teks; ?></span>
+                                    <?php else: ?>
+                                        Belum Absen
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div>
+                                <?php if (!$is_present): ?>
+                                    <span class="absensi-status status-belum">Alpha</span>
+                                <?php elseif ($is_out): ?>
+                                    <span class="absensi-status status-pulang">Pulang</span>
+                                <?php else: ?>
+                                    <span class="absensi-status status-hadir">Hadir</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
         <!-- ===================================== -->

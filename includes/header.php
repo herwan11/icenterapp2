@@ -95,11 +95,12 @@ if(isset($conn)) {
                 <!-- Menu Kas -->
                 <a href="kas.php" class="nav-link"><i class="fas fa-wallet fa-fw"></i> <span>Kas</span></a>
 
-                <!-- Menu Absensi (BARU) -->
+                <!-- Menu Absensi (UPDATE: Tambah Absen Keluar) -->
                 <div class="nav-item-dropdown">
                     <a href="#" class="nav-link"><i class="fas fa-clock fa-fw"></i> <span>Absensi</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                     <div class="dropdown-content">
                         <a href="absensi.php" class="nav-link sub-item">Scan Masuk</a>
+                        <a href="absen_keluar.php" class="nav-link sub-item" style="color: var(--accent-danger);">Scan Keluar</a>
                         <?php if ($user_role === 'owner' || $user_role === 'admin'): ?>
                             <a href="generate_qr.php" class="nav-link sub-item">Monitor QR (Kantor)</a>
                         <?php endif; ?>
