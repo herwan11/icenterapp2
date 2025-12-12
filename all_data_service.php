@@ -79,18 +79,24 @@ function get_status_color($status) {
     /* Nota Styles (Print Friendly) */
     .nota-container { font-family: 'Courier New', Courier, monospace; color: #000; padding: 20px; background: #fff; }
     .nota-header { text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #000; padding-bottom: 10px; }
+    .nota-logo { max-width: 120px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
     .nota-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+    .nota-address { font-size: 11px; line-height: 1.4; margin-bottom: 5px; }
+    .nota-contact { font-size: 12px; font-weight: bold; }
     .nota-info { font-size: 12px; margin-bottom: 15px; }
     .nota-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-bottom: 10px; }
     .nota-table th { text-align: left; border-bottom: 1px dashed #000; padding: 5px 0; }
     .nota-table td { padding: 5px 0; }
     .nota-total { border-top: 1px dashed #000; padding-top: 5px; margin-top: 10px; }
     .nota-footer { text-align: center; margin-top: 20px; font-size: 11px; border-top: 2px dashed #000; padding-top: 10px; }
+    .nota-website { margin-top: 8px; font-weight: bold; font-size: 12px; }
     
     @media print {
         body * { visibility: hidden; }
         #printableArea, #printableArea * { visibility: visible; }
-        #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
+        #printableArea { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+        .modal-content { box-shadow: none; border: none; }
+        .nota-container { padding: 0; width: 100%; max-width: 100%; }
     }
 </style>
 
@@ -219,10 +225,22 @@ function get_status_color($status) {
         <div class="modal-body" id="printableArea">
             <div class="nota-container">
                 <div class="nota-header">
+                    <!-- LOGO DITAMBAHKAN -->
+                    <img src="assets/media/icenter.png" alt="iCenter Logo" class="nota-logo">
+                    
                     <div class="nota-title">iCenter Apple</div>
-                    <div>Jl. Contoh Alamat No. 123</div>
-                    <div>Telp: 0812-3456-7890</div>
+                    
+                    <!-- ALAMAT DIPERBAIKI -->
+                    <div class="nota-address">
+                        Jl. Nangka, Mappasaile, Kec. Pangkajene,<br>
+                        Kabupaten Pangkajene Dan Kepulauan,<br>
+                        Sulawesi Selatan 90611
+                    </div>
+                    
+                    <!-- WA DIPERBAIKI -->
+                    <div class="nota-contact">WA: 0852-9805-8500</div>
                 </div>
+                
                 <div class="nota-info">
                     <table style="width:100%">
                         <tr><td>No. Invoice</td><td align="right" id="nota_inv">INV-XXX</td></tr>
@@ -257,6 +275,8 @@ function get_status_color($status) {
                 <div class="nota-footer">
                     <p>Terima Kasih atas Kepercayaan Anda</p>
                     <p>Garansi berlaku sesuai ketentuan.</p>
+                    <!-- WEBSITE DITAMBAHKAN -->
+                    <p class="nota-website">www.icenterpangkep.my.id</p>
                 </div>
             </div>
         </div>

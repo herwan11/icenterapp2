@@ -13,12 +13,15 @@ $status_counts = [
     'Antrian' => 0, 'Proses' => 0, 'Selesai' => 0,
     'Diambil' => 0, 'Batal' => 0, 'Refund' => 0
 ];
-$sql_counts = "SELECT status_service, COUNT(*) as count FROM service GROUP BY status_service";
-$result_counts = $conn->query($sql_counts);
-if ($result_counts) {
-    while($row = $result_counts->fetch_assoc()){
-        if (array_key_exists($row['status_service'], $status_counts)) {
-            $status_counts[$row['status_service']] = $row['count'];
+// Cek koneksi db sebelum query (jaga-jaga jika file ini dipanggil terpisah, meski biasanya sudah ada di functions/db)
+if(isset($conn)) {
+    $sql_counts = "SELECT status_service, COUNT(*) as count FROM service GROUP BY status_service";
+    $result_counts = $conn->query($sql_counts);
+    if ($result_counts) {
+        while($row = $result_counts->fetch_assoc()){
+            if (array_key_exists($row['status_service'], $status_counts)) {
+                $status_counts[$row['status_service']] = $row['count'];
+            }
         }
     }
 }
@@ -55,15 +58,10 @@ if ($result_counts) {
                         <a href="repair_dashboard.php" class="nav-link sub-item">Dashboard</a>
                         <a href="all_data_service.php" class="nav-link sub-item">All data</a>
                         <a href="input_data_service.php" class="nav-link sub-item">Input Data</a>
-                        
-                        <!-- Waiting List dan Submenu DIPINDAHKAN DARI SINI -->
-                        
-                        <!-- Menu Kas & Garansi & Laporan Service SUDAH DIPINDAHKAN SEBELUMNYA -->
-                        
                     </div>
                 </div>
 
-                <!-- Menu Waiting List (Baru - Menu Induk dengan Dropdown) -->
+                <!-- Menu Waiting List -->
                 <div class="nav-item-dropdown">
                     <a href="#" class="nav-link"><i class="fas fa-clipboard-list fa-fw"></i> <span>Waiting List</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                     <div class="dropdown-content">
@@ -94,46 +92,57 @@ if ($result_counts) {
                     </div>
                 </div>
 
-                <!-- Menu Laporan Service (Baru - Menu Induk dengan Dropdown) -->
+                <!-- Menu Kas -->
+                <a href="kas.php" class="nav-link"><i class="fas fa-wallet fa-fw"></i> <span>Kas</span></a>
+
+                <!-- Menu Absensi (BARU) -->
                 <div class="nav-item-dropdown">
-                    <a href="#" class="nav-link"><i class="fas fa-chart-bar fa-fw"></i> <span>Laporan Service</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <a href="#" class="nav-link"><i class="fas fa-clock fa-fw"></i> <span>Absensi</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                     <div class="dropdown-content">
-                        <a href="#" class="nav-link sub-item">Harian</a>
-                        <a href="#" class="nav-link sub-item">Mingguan</a>
+                        <a href="absensi.php" class="nav-link sub-item">Scan Masuk</a>
+                        <?php if ($user_role === 'owner' || $user_role === 'admin'): ?>
+                            <a href="generate_qr.php" class="nav-link sub-item">Monitor QR (Kantor)</a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Menu Kas (Baru - Menu Induk) -->
-                <a href="kas.php" class="nav-link"><i class="fas fa-wallet fa-fw"></i> <span>Kas</span></a>
-
-                <!-- Menu Garansi (Baru - Menu Induk) -->
+                <!-- Menu Garansi -->
                 <a href="#" class="nav-link"><i class="fas fa-shield-alt fa-fw"></i> <span>Garansi</span></a>
 
                 <!-- Menu Customers -->
                 <a href="customers.php" class="nav-link"><i class="fas fa-users fa-fw"></i> <span>Customers</span></a>
-                <!-- MENU BARU: SUPLIER -->
+                
+                <!-- Menu Suplier -->
                 <a href="suplier.php" class="nav-link"><i class="fas fa-truck fa-fw"></i> <span>Suplier</span></a>
 
+                <!-- Menu Laporan Service -->
+                <div class="nav-item-dropdown">
+                    <a href="#" class="nav-link"><i class="fas fa-file-pdf fa-fw"></i> <span>Laporan Service</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <div class="dropdown-content">
+                        <a href="laporan_harian.php" class="nav-link sub-item">Laporan Harian</a>
+                        <a href="laporan_mingguan.php" class="nav-link sub-item">Laporan Mingguan</a>
+                    </div>
+                </div>
 
                 <!-- ====================================================== -->
                 <!-- MENU UNTUK ADMIN & OWNER -->
                 <!-- ====================================================== -->
                 <?php if ($user_role === 'owner' || $user_role === 'admin'): ?>
-                    <!-- Menu Acc & Sparepart -->
                     <div class="nav-item-dropdown">
                         <a href="#" class="nav-link"><i class="fas fa-microchip fa-fw"></i> <span>Acc & Sparepart</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                         <div class="dropdown-content">
-                            <!-- MENAMBAHKAN LINK DASHBOARD SPAREPART -->
                             <a href="sparepart_dashboard.php" class="nav-link sub-item">Dashboard</a>
                             <a href="sparepart_masuk.php" class="nav-link sub-item">Sparepart Masuk</a>
                             <a href="stok_sparepart.php" class="nav-link sub-item">Stok Sparepart</a>
                             <a href="penjualan_sparepart_view.php" class="nav-link sub-item">Penjualan Sparepart</a>
                         </div>
                     </div>
-                     <!-- Menu lainnya untuk admin & owner -->
                 <?php endif; ?>
-                
-                <!-- ... Sisa menu lainnya akan ditambahkan di sini ... -->
+
+                <!-- MENU DEVICE BINDING (KHUSUS OWNER) -->
+                <?php if ($user_role === 'owner'): ?>
+                    <a href="device_binding.php" class="nav-link" style="color: var(--accent-warning);"><i class="fas fa-mobile-alt fa-fw"></i> <span>Device Binding</span></a>
+                <?php endif; ?>
 
             </nav>
             <div class="sidebar-footer">
