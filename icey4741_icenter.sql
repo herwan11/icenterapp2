@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 12, 2025 at 08:27 AM
+-- Generation Time: Dec 12, 2025 at 03:18 PM
 -- Server version: 11.4.8-MariaDB-cll-lve
 -- PHP Version: 8.4.14
 
@@ -42,7 +42,7 @@ CREATE TABLE `absensi` (
 
 INSERT INTO `absensi` (`id`, `user_id`, `tanggal`, `waktu_masuk`, `waktu_keluar`, `created_at`) VALUES
 (1, 6, '2025-12-09', '2025-12-09 15:42:42', '2025-12-09 15:48:59', '2025-12-09 08:42:42'),
-(2, 6, '2025-12-12', '2025-12-12 08:18:57', NULL, '2025-12-12 01:18:57');
+(2, 6, '2025-12-12', '2025-12-12 08:18:57', '2025-12-12 10:49:42', '2025-12-12 01:18:57');
 
 -- --------------------------------------------------------
 
@@ -368,7 +368,11 @@ INSERT INTO `qr_tokens` (`id`, `token`, `created_at`, `expires_at`, `is_used`) V
 (62, 'c00207c06f7db2aea9b848152892b190', 1765502374, 1765502409, 0),
 (63, 'b132d37d56e533acac8482b9a5ac7fec', 1765502404, 1765502439, 0),
 (64, '5e087e94e3d2f896f49c9044447a5182', 1765502434, 1765502469, 0),
-(65, 'da979355c808f9e950bf56ac341d4c6c', 1765502464, 1765502499, 0);
+(65, 'da979355c808f9e950bf56ac341d4c6c', 1765502464, 1765502499, 0),
+(66, '6bd696df094095162d5cafca97e96ff0', 1765511381, 1765511416, 0),
+(67, 'd8707957acd6e4f894346a2fb334e45e', 1765524817, 1765524852, 0),
+(68, '324d37c02130f12bebef2cd01a2c53c4', 1765524848, 1765524883, 0),
+(69, '800af615bac09127f6a800717f20f342', 1765524885, 1765524920, 0);
 
 -- --------------------------------------------------------
 
@@ -569,6 +573,8 @@ CREATE TABLE `users` (
   `username` varchar(50) DEFAULT NULL,
   `password` text DEFAULT NULL,
   `role` varchar(20) DEFAULT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `qr_token` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
@@ -576,13 +582,13 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `nama`, `username`, `password`, `role`, `created_at`) VALUES
-(1, 'Admin Utama', 'admin', 'admin123', 'admin', '2025-08-07 07:45:56'),
-(2, 'Rian Teknisi', 'rian', 'admin123', 'karyawan', '2025-08-07 07:45:56'),
-(3, 'Tono Kasir', 'tono', 'admin123', 'karyawan', '2025-08-07 07:45:56'),
-(4, 'Yuni Admin', 'yuni', 'admin123', 'karyawan', '2025-08-07 07:45:56'),
-(5, 'Owner Toko', 'owner', 'admin123', 'owner', '2025-08-07 07:45:56'),
-(6, 'test', 'test', 'admin123', 'admin', '2025-12-09 08:20:18');
+INSERT INTO `users` (`id`, `nama`, `username`, `password`, `role`, `foto`, `qr_token`, `created_at`) VALUES
+(1, 'Admin Utama', 'admin', 'admin123', 'admin', 'assets/uploads/employees/EMP_693b917c47f4c.png', 'b413aa72ecb7c649a3379970751f6e0b', '2025-08-07 07:45:56'),
+(2, 'Rian Teknisi', 'rian', 'admin123', 'Teknisi', NULL, '80ee34c2a24ebc75f38a2149c6581835', '2025-08-07 07:45:56'),
+(3, 'Tono Kasir', 'tono', 'admin123', 'Teknisi', NULL, 'b48f553417d12215e2be04d41ddb4639', '2025-08-07 07:45:56'),
+(4, 'Yuni Admin', 'yuni', 'admin123', 'Teknisi', NULL, 'b660114c355b5b01056f4d9410ed0fee', '2025-08-07 07:45:56'),
+(5, 'Owner Toko', 'owner', 'admin123', 'owner', NULL, '0854e029e4c391d9519af96134f5f88b', '2025-08-07 07:45:56'),
+(6, 'test', 'test', 'admin123', 'admin', NULL, 'b4ff5b253c6fa3ce9bc0d547f17ad5d3', '2025-12-09 08:20:18');
 
 -- --------------------------------------------------------
 
@@ -811,7 +817,7 @@ ALTER TABLE `penjualan_sparepart`
 -- AUTO_INCREMENT for table `qr_tokens`
 --
 ALTER TABLE `qr_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `sparepart`

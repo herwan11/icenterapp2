@@ -13,7 +13,7 @@ $status_counts = [
     'Antrian' => 0, 'Proses' => 0, 'Selesai' => 0,
     'Diambil' => 0, 'Batal' => 0, 'Refund' => 0
 ];
-// Cek koneksi db sebelum query (jaga-jaga jika file ini dipanggil terpisah, meski biasanya sudah ada di functions/db)
+// Cek koneksi db sebelum query
 if(isset($conn)) {
     $sql_counts = "SELECT status_service, COUNT(*) as count FROM service GROUP BY status_service";
     $result_counts = $conn->query($sql_counts);
@@ -49,7 +49,17 @@ if(isset($conn)) {
                 <!-- ====================================================== -->
                 <!-- MENU UNTUK SEMUA ROLE -->
                 <!-- ====================================================== -->
-                <a href="index.php" class="nav-link"><i class="fas fa-store fa-fw"></i> <span>My Shop</span></a>
+                
+                <!-- PERUBAHAN 1: Ganti My Shop jadi Beranda -->
+                <a href="index.php" class="nav-link"><i class="fas fa-home fa-fw"></i> <span>Beranda</span></a>
+
+                <!-- PERUBAHAN 2: Menu Karyawan -->
+                <div class="nav-item-dropdown">
+                    <a href="#" class="nav-link"><i class="fas fa-id-card fa-fw"></i> <span>Karyawan</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <div class="dropdown-content">
+                        <a href="employees.php" class="nav-link sub-item">Data Karyawan</a>
+                    </div>
+                </div>
 
                 <!-- Menu Repair -->
                 <div class="nav-item-dropdown">
@@ -95,7 +105,7 @@ if(isset($conn)) {
                 <!-- Menu Kas -->
                 <a href="kas.php" class="nav-link"><i class="fas fa-wallet fa-fw"></i> <span>Kas</span></a>
 
-                <!-- Menu Absensi (UPDATE: Tambah Absen Keluar) -->
+                <!-- Menu Absensi -->
                 <div class="nav-item-dropdown">
                     <a href="#" class="nav-link"><i class="fas fa-clock fa-fw"></i> <span>Absensi</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                     <div class="dropdown-content">

@@ -17,14 +17,15 @@ $error_message = '';
 
 // Proses form jika ada data yang dikirim (metode POST)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
 
     if (empty($username) || empty($password)) {
         $error_message = "Username dan password tidak boleh kosong.";
     } else {
         // Ambil data user dari database
-        $stmt = $conn->prepare("SELECT id, nama, username, password, role FROM users WHERE username = ?");
+        // Kita ambil id, nama, username, password, role, dan foto untuk sesi
+        $stmt = $conn->prepare("SELECT id, nama, username, password, role, foto FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -32,15 +33,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
 
-            // Verifikasi password (Gunakan password_verify jika password di-hash)
-            // Untuk sekarang, kita asumsikan perbandingan langsung (tidak aman untuk produksi)
-            // Anda HARUS menggantinya dengan password_hash() saat membuat user dan password_verify() di sini
-            if ($password === $user['password']) { // GANTI DENGAN: password_verify($password, $user['password'])
+            // Verifikasi password
+            // 1. Cek dengan password_verify (untuk password yang sudah di-hash)
+            // 2. Jika gagal, cek sebagai plaintext (untuk kompatibilitas data lama/legacy)
+            $password_valid = false;
+
+            if (password_verify($password, $user['password'])) {
+                $password_valid = true;
+            } elseif ($password === $user['password']) {
+                // Fallback untuk password lama yang belum di-hash
+                $password_valid = true;
+                
+                // Opsional: Otomatis update ke hash agar lebih aman ke depannya
+                // $new_hash = password_hash($password, PASSWORD_DEFAULT);
+                // $conn->query("UPDATE users SET password = '$new_hash' WHERE id = " . $user['id']);
+            }
+
+            if ($password_valid) {
                 // Login berhasil, simpan data ke sesi
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['nama'] = $user['nama'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
+                // Simpan path foto ke sesi jika perlu, atau gunakan default
+                $_SESSION['foto'] = !empty($user['foto']) ? $user['foto'] : null;
 
                 // Arahkan ke halaman utama
                 header("Location: index.php");
