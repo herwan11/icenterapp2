@@ -20,10 +20,12 @@ if (!$user) {
 // URL Foto (Fallback jika tidak ada)
 $foto_url = !empty($user['foto']) && file_exists($user['foto']) 
             ? $user['foto'] 
-            : 'assets/media/icenter.png'; // Fallback ke logo jika tidak ada foto
+            : 'assets/media/icenter.png'; // Fallback
 
-// Warna Utama (Biru seperti referensi - Cyan/Blue)
+// Warna Utama (Biru Terang untuk Sidebar)
 $primary_color = '#00AEEF'; 
+// Warna Sekunder (Biru Gelap untuk blok Nama/Info)
+$dark_color = '#0e2b42'; 
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -32,7 +34,7 @@ $primary_color = '#00AEEF';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ID Card - <?php echo htmlspecialchars($user['nama']); ?></title>
     <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -40,7 +42,7 @@ $primary_color = '#00AEEF';
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Montserrat', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -49,181 +51,152 @@ $primary_color = '#00AEEF';
         }
 
         /* Container Kartu */
-        .card-container {
-            width: 320px; /* Ukuran ID Card Portrait */
-            height: 520px;
+        .id-card-wrapper {
+            width: 320px;
+            height: 560px; /* Rasio Portrait */
             background: white;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            display: flex;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            display: flex;
             overflow: hidden;
-            /* Tidak ada border-radius agar terlihat tegas seperti kartu PVC */
         }
 
-        /* --- SIDEBAR KIRI (ROLE) --- */
-        .sidebar-left {
-            width: 50px;
-            background-color: <?php echo $primary_color; ?>;
-            height: 100%;
+        /* --- BAGIAN KIRI (Konten Utama) --- */
+        .left-content {
+            flex: 1; /* Mengisi sisa ruang */
             display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            flex-direction: column;
+            position: relative;
         }
 
-        .vertical-text {
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            transform: rotate(180deg);
-            color: white;
-            font-family: 'Oswald', sans-serif;
-            font-weight: 700;
-            font-size: 28px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        /* --- KONTEN KANAN --- */
-        .main-content {
-            flex-grow: 1;
-            padding: 20px;
+        /* 1. Top Section (Putih - Logo & Foto) */
+        .top-section {
+            background-color: white;
+            padding-top: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
+            padding-bottom: 20px;
+            flex-grow: 1; /* Mendorong bagian bawah */
         }
 
-        /* Header (Logo & Nama) */
-        .header {
-            width: 100%;
+        .company-header {
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* Logo di kiri */
             gap: 10px;
             margin-bottom: 20px;
-            margin-top: 10px;
         }
 
-        .logo-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid <?php echo $primary_color; ?>;
-            padding: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
         .logo-img {
-            width: 100%;
+            width: 40px;
             height: auto;
-            object-fit: contain;
         }
 
-        .company-info {
-            text-align: left;
-        }
-
-        .company-title {
+        .company-name {
+            font-size: 18px;
             font-weight: 700;
-            font-size: 16px;
-            color: #000;
-            line-height: 1.2;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .company-subtitle {
-            font-size: 12px;
-            color: #555;
-            font-weight: 500;
+        .company-name span {
+            color: <?php echo $primary_color; ?>; /* Warna Biru pada kata kedua/Apple */
         }
 
-        /* Area Foto dengan Background Shape Biru */
-        .photo-area {
-            position: relative;
+        .photo-container {
             width: 180px;
             height: 180px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 10px;
-            margin-bottom: 20px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #f0f0f0; /* Border tipis abu-abu */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        /* Shape Biru di Belakang Foto (Tetesan air miring) */
-        .blue-shape {
-            position: absolute;
+        .photo-container img {
             width: 100%;
             height: 100%;
-            background-color: <?php echo $primary_color; ?>;
-            border-radius: 50% 50% 50% 0; /* Bentuk tetesan */
-            transform: rotate(-45deg);
-            z-index: 1;
-        }
-
-        .profile-img {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
             object-fit: cover;
-            position: relative;
-            z-index: 2;
-            border: 4px solid white; /* Border putih pemisah */
         }
 
-        /* Info Karyawan */
-        .info-area {
-            text-align: center;
-            width: 100%;
-            z-index: 2;
-            margin-bottom: 20px;
+        /* 2. Middle Section (Biru Gelap - Nama & Info) */
+        .info-block {
+            background-color: <?php echo $dark_color; ?>;
+            color: white;
+            padding: 20px;
+            position: relative;
         }
 
         .employee-name {
-            font-family: 'Oswald', sans-serif;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
-            color: #000;
-            text-transform: uppercase;
-            margin: 0;
+            text-transform: capitalize;
+            margin-bottom: 15px;
             line-height: 1.2;
         }
 
-        .employee-role-sub {
-            font-size: 14px;
-            color: #333;
-            margin-top: 5px;
-            font-weight: 400;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Footer (QR Code & Website) */
-        .footer-area {
-            margin-top: auto;
-            text-align: center;
-            width: 100%;
+        .details-row {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            gap: 15px;
         }
 
-        /* QR Barcode Style */
-        .qr-section {
-            margin-bottom: 10px;
+        /* Kotak QR Code dengan border putih */
+        .qr-box {
+            background: white;
+            padding: 5px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .website-text {
-            font-size: 10px;
-            color: #000;
-            letter-spacing: 1px;
-            font-weight: 500;
-            margin-top: 5px;
+        .details-text {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #e0e0e0;
+        }
+        .details-text strong {
+            color: white;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* 3. Footer Section (Putih - Website) */
+        .card-footer {
+            background-color: white;
+            padding: 10px 20px;
+            font-size: 11px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        /* --- BAGIAN KANAN (Sidebar Biru) --- */
+        .right-sidebar {
+            width: 65px;
+            background-color: <?php echo $primary_color; ?>;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vertical-role {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg); /* Memutar teks agar terbaca dari bawah ke atas */
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            white-space: nowrap;
         }
 
         /* Tombol Download */
         .btn-download {
             margin-top: 30px;
-            background: <?php echo $primary_color; ?>;
+            background: <?php echo $dark_color; ?>;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -236,57 +209,59 @@ $primary_color = '#00AEEF';
             display: flex;
             align-items: center;
             gap: 10px;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Montserrat', sans-serif;
         }
-        .btn-download:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn-download:hover { transform: scale(1.05); }
 
     </style>
 </head>
 <body>
 
-    <div class="card-container" id="idCard">
-        <!-- Sidebar Kiri -->
-        <div class="sidebar-left">
-            <!-- ROLE diputar vertikal -->
-            <div class="vertical-text"><?php echo strtoupper($user['role']); ?></div>
-        </div>
-
-        <!-- Konten Kanan -->
-        <div class="main-content">
-            <!-- Header -->
-            <div class="header">
-                <div class="logo-circle">
+    <div class="id-card-wrapper" id="idCard">
+        
+        <!-- KONTEN KIRI -->
+        <div class="left-content">
+            
+            <!-- Logo & Foto -->
+            <div class="top-section">
+                <div class="company-header">
+                    <!-- Ganti src logo sesuai kebutuhan -->
                     <img src="assets/media/icenter.png" alt="Logo" class="logo-img">
+                    <div class="company-name">iCenter <span>Apple</span></div>
                 </div>
-                <div class="company-info">
-                    <div class="company-title">iCenter Apple</div>
-                    <!-- Bisa diisi role atau Authorized Service -->
-                    <div class="company-subtitle">Authorized Service</div> 
+                
+                <div class="photo-container">
+                    <img src="<?php echo htmlspecialchars($foto_url); ?>" alt="Foto Profil">
                 </div>
             </div>
 
-            <!-- Foto dengan Background Shape -->
-            <div class="photo-area">
-                <div class="blue-shape"></div>
-                <img src="<?php echo htmlspecialchars($foto_url); ?>" alt="Foto Karyawan" class="profile-img">
-            </div>
-
-            <!-- Nama & Role -->
-            <div class="info-area">
-                <h1 class="employee-name"><?php echo strtoupper($user['nama']); ?></h1>
-                <div class="employee-role-sub">STAFF ID: <?php echo str_pad($user['id'], 4, '0', STR_PAD_LEFT); ?></div>
-            </div>
-
-            <!-- Footer QR & Website -->
-            <div class="footer-area">
-                <div class="qr-section">
-                    <!-- Placeholder QR -->
-                    <div id="qrcode"></div>
+            <!-- Blok Biru Gelap (Nama & QR) -->
+            <div class="info-block">
+                <div class="employee-name"><?php echo htmlspecialchars($user['nama']); ?></div>
+                
+                <div class="details-row">
+                    <div class="qr-box">
+                        <div id="qrcode"></div>
+                    </div>
+                    <div class="details-text">
+                        <strong>Staff ID: <?php echo str_pad($user['id'], 4, '0', STR_PAD_LEFT); ?></strong>
+                        <?php echo date('Y'); ?> Authorized<br>
+                        Service Personnel
+                    </div>
                 </div>
-                <!-- Pengganti ID Number Barcode -->
-                <div class="website-text">www.icenterpangkep.my.id</div>
+            </div>
+
+            <!-- Website Footer -->
+            <div class="card-footer">
+                www.icenterpangkep.my.id
             </div>
         </div>
+
+        <!-- SIDEBAR KANAN (Role) -->
+        <div class="right-sidebar">
+            <div class="vertical-role"><?php echo strtoupper($user['role']); ?></div>
+        </div>
+
     </div>
 
     <button class="btn-download" onclick="downloadCard()">
@@ -296,16 +271,16 @@ $primary_color = '#00AEEF';
 
     <script>
         // Generate QR Code
-        // Isi QR adalah URL profil atau token user agar unik
+        // Isi QR adalah URL saat ini (profil user)
         const qrContent = window.location.href; 
         
         new QRCode(document.getElementById("qrcode"), {
             text: qrContent,
-            width: 100,  
-            height: 100, 
-            colorDark : "#000000",
+            width: 60,  
+            height: 60, 
+            colorDark : "<?php echo $dark_color; ?>", // QR warna gelap sesuai tema
             colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
+            correctLevel : QRCode.CorrectLevel.M
         });
 
         // Fungsi Download Gambar
@@ -316,13 +291,11 @@ $primary_color = '#00AEEF';
             btn.innerHTML = 'Memproses...';
             
             html2canvas(card, {
-                scale: 3, // Resolusi tinggi (3x) agar tajam saat dicetak
-                useCORS: true, // Penting untuk gambar profil
-                backgroundColor: null,
-                logging: false
+                scale: 3, // Resolusi tinggi
+                useCORS: true, 
+                backgroundColor: null
             }).then(canvas => {
                 const link = document.createElement('a');
-                // Nama file bersih
                 const cleanName = '<?php echo preg_replace("/[^a-zA-Z0-9]/", "", $user["nama"]); ?>';
                 link.download = 'ID-Card-' + cleanName + '.png';
                 link.href = canvas.toDataURL('image/png');

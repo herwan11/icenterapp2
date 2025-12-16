@@ -50,10 +50,8 @@ if(isset($conn)) {
                 <!-- MENU UNTUK SEMUA ROLE -->
                 <!-- ====================================================== -->
                 
-                <!-- PERUBAHAN 1: Ganti My Shop jadi Beranda -->
                 <a href="index.php" class="nav-link"><i class="fas fa-home fa-fw"></i> <span>Beranda</span></a>
 
-                <!-- PERUBAHAN 2: Menu Karyawan -->
                 <div class="nav-item-dropdown">
                     <a href="#" class="nav-link"><i class="fas fa-id-card fa-fw"></i> <span>Karyawan</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
                     <div class="dropdown-content">
@@ -134,6 +132,18 @@ if(isset($conn)) {
                         <a href="laporan_mingguan.php" class="nav-link sub-item">Laporan Mingguan</a>
                     </div>
                 </div>
+
+                <!-- BARU: Menu Laporan Stok -->
+                <?php if ($user_role === 'owner' || $user_role === 'admin'): ?>
+                <div class="nav-item-dropdown">
+                    <a href="#" class="nav-link"><i class="fas fa-boxes fa-fw"></i> <span>Laporan Stok</span> <i class="fas fa-chevron-down dropdown-icon"></i></a>
+                    <div class="dropdown-content">
+                        <a href="laporan_stok.php" class="nav-link sub-item">Stok Saat Ini</a>
+                        <a href="laporan_stok_masuk.php" class="nav-link sub-item">Riwayat Masuk</a>
+                        <a href="laporan_stok_keluar.php" class="nav-link sub-item">Riwayat Keluar</a>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- ====================================================== -->
                 <!-- MENU UNTUK ADMIN & OWNER -->
