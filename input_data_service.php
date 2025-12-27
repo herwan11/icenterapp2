@@ -15,7 +15,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
         $imei_sn = $_POST['imei_sn'];
         $kerusakan = $_POST['kerusakan'];
         $kelengkapan = $_POST['kelengkapan'];
-        $teknisi_id = $_POST['teknisi_id'];
+        
+        // PERUBAHAN: Teknisi ID di-set NULL saat awal masuk (Antrian)
+        $teknisi_id = NULL; 
+        
         $customer_id = $_POST['customer_id'];
         $garansi = $_POST['garansi'];
         $keterangan = $_POST['keterangan'];
@@ -32,10 +35,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
 
         $sql_service = "INSERT INTO service (invoice, kasir_id, merek_hp, tipe_hp, imei_sn, kerusakan, kelengkapan, teknisi_id, customer_id, garansi, keterangan, durasi_garansi, sub_total, uang_muka, metode_pembayaran, status_pembayaran) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt_service = $conn->prepare($sql_service);
+        // Note: teknisi_id pass NULL, type definition 'i' allows null if handled correctly, but safer to stick with 'i' and pass null
         $stmt_service->bind_param("sisssssiisssddss", $invoice, $kasir_id, $merek_hp, $tipe_hp, $imei_sn, $kerusakan, $kelengkapan, $teknisi_id, $customer_id, $garansi, $keterangan, $durasi_garansi, $sub_total, $uang_muka, $metode_pembayaran, $status_pembayaran);
         
         if ($stmt_service->execute()) {
-            $message = "<div class='alert alert-success'>Order service baru dengan invoice <strong>$invoice</strong> berhasil dibuat!</div>";
+            $message = "<div class='alert alert-success'>Order service baru dengan invoice <strong>$invoice</strong> berhasil dibuat! Masuk ke Antrian.</div>";
         } else {
              $message = "<div class='alert alert-danger'>Gagal membuat order: " . $conn->error . "</div>";
         }
@@ -46,19 +50,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_order'])) {
 }
 
 // --- Ambil Data untuk Dropdown ---
-// PERBAIKAN: Mengambil dari tabel 'customers' agar ID-nya valid untuk Foreign Key
-// Kolom di customers: id, nama, kontak, alamat
 $customers = [];
 $result_cust = $conn->query("SELECT id, nama, kontak as no_hp, alamat FROM customers ORDER BY nama ASC");
 while($row = $result_cust->fetch_assoc()){ 
-    // Kita tambahkan field dummy 'keluhan' agar JS tidak error, meski di DB customers tidak ada
     $row['keluhan'] = ''; 
     $customers[] = $row; 
 }
-
-$teknisi = [];
-$result_tech = $conn->query("SELECT id, nama FROM karyawan WHERE jabatan = 'Teknisi' ORDER BY nama ASC");
-while($row = $result_tech->fetch_assoc()){ $teknisi[] = $row; }
 
 // --- Generate Nomor Invoice Unik ---
 $tanggal_inv = date("dmy");
@@ -148,7 +145,7 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
         transition: all 0.2s ease;
     }
     .form-control:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15); outline: none; }
-    .form-control[readonly] { background-color: #fff; cursor: pointer; } /* Agar terlihat seperti input biasa tapi clickable */
+    .form-control[readonly] { background-color: #fff; cursor: pointer; } 
     textarea.form-control { resize: vertical; min-height: 80px; }
 
     /* Custom Select Wrapper for Customer */
@@ -313,15 +310,14 @@ $invoice_number = "INV-" . $tanggal_inv . "-" . $waktu_inv;
                             <textarea name="kelengkapan" class="form-control" rows="3" required placeholder="Unit, Dus, Charger, dll..."></textarea>
                         </div>
 
-                        <div class="form-group">
-                            <label>Teknisi Penanggung Jawab <span style="color:red">*</span></label>
-                            <select name="teknisi_id" class="form-control" required>
-                                <option value="">--- Pilih Teknisi ---</option>
-                                <?php foreach($teknisi as $tech): ?>
-                                <option value="<?php echo $tech['id']; ?>"><?php echo htmlspecialchars($tech['nama']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <!-- 
+                            PERUBAHAN: Input Teknisi Dihapus.
+                            Teknisi akan melakukan "Ambil Alih" di halaman Waiting List.
+                        -->
+                        <div class="alert alert-info" style="font-size: 13px; background-color: #e3f2fd; color: #0c5460; border-color: #bee5eb; padding: 10px; border-radius: 8px;">
+                            <i class="fas fa-info-circle"></i> <strong>Info:</strong> Unit akan masuk ke <strong>Antrian</strong>. Teknisi dapat mengambil alih job ini melalui halaman Waiting List.
                         </div>
+
                     </div>
                 </div>
 

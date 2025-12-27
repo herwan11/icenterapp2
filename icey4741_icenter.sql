@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 16, 2025 at 08:30 AM
+-- Generation Time: Dec 27, 2025 at 03:39 PM
 -- Server version: 11.4.9-MariaDB-cll-lve
--- PHP Version: 8.4.15
+-- PHP Version: 8.4.16
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -180,8 +180,7 @@ CREATE TABLE `master_sparepart` (
 INSERT INTO `master_sparepart` (`id`, `code_sparepart`, `nama`, `model`, `kategori`, `satuan`, `harga_beli`, `harga_jual`, `supplier_merek`, `stok_tersedia`, `stok_minimum`, `created_at`) VALUES
 (5, 'SP-C-0001', 'Kamera Depan', 'xxxxxx', 'Kamera Oppo', 'pcs', 50000.00, 70000.00, 'CV. Sparepart KW mas', 8, 5, '2025-12-02 09:00:23'),
 (6, 'LC-L-00001', 'LCD iphone 13', 'awadaw LQ', 'LCD', 'pcs', 30000.00, 80000.00, 'CV. Sparepart KW mas', 9, 5, '2025-12-09 05:30:22'),
-(7, '01', 'LCD', 'LUCU-LUCU', 'APA DI', '5', 25000.00, 0.00, '', 0, 0, '2025-12-09 07:04:10'),
-(8, '02', 'ANU', 'AGAK LAIN', 'APA DI ???', 'PCS', 1000.00, 5000.00, 'CV. Sparepart KW mas', 20, 2, '2025-12-09 07:06:28');
+(8, '02', 'ANU', 'AGAK LAIN', 'APA DI ???', 'PCS', 1000.00, 5000.00, 'CV. Sparepart KW mas', 19, 2, '2025-12-09 07:06:28');
 
 -- --------------------------------------------------------
 
@@ -415,7 +414,37 @@ INSERT INTO `service` (`invoice`, `tanggal`, `kasir_id`, `merek_hp`, `tipe_hp`, 
 ('INV-091225-141104', '2025-12-09 14:13:54', 1, 'APPLE', 'IPHONE 11', '00000', 'LAYAR PECAH/KDRT', 'UNIT ', 4, 5, 'tidak', '', '10 Bulan', 0.00, NULL, 200000.00, 'cash', 'Belum Lunas', 'Batal', 0.00),
 ('INV-091225-141449', '2025-12-09 14:18:17', 1, 'ODDO', 'ODDO 7', '00000111', 'MENINGGOI', 'UNIT', 1, 6, 'tidak', 'JANGAN DATANG LAGI', '60 Hari', 0.00, NULL, 1000000.00, 'cash', 'Lunas', 'Diambil', 0.00),
 ('INV-091225-160606', '2025-12-09 16:07:34', 1, 'APPLE', 'IPHONE 11', '00000', 'LAYAR PECAH', 'UNIT', 1, 6, 'ya', '', '0 Hari', 20000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 25000.00),
-('INV-091225-161752', '2025-12-09 16:18:58', 1, 'ODDO', 'ODDO 7', '00000', 'TIDAK JELAS', 'UNIT', 1, 6, 'tidak', '', '0 Hari', 15000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 15000.00);
+('INV-091225-161752', '2025-12-09 16:18:58', 1, 'ODDO', 'ODDO 7', '00000', 'TIDAK JELAS', 'UNIT', 1, 6, 'tidak', '', '0 Hari', 15000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 15000.00),
+('INV-161225-084224', '2025-12-16 08:43:02', 5, 'ipongggg', 'IP 15', '346346', 'sdsgg', 'ewgerhwa', 2, 6, 'tidak', 'wtwetwet', '0 Hari', 55000.00, NULL, 50000.00, 'cash', 'Lunas', 'Diambil', 5000.00);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `service_teams`
+--
+
+CREATE TABLE `service_teams` (
+  `id` int(11) NOT NULL,
+  `invoice` varchar(50) NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `joined_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `service_teams`
+--
+
+INSERT INTO `service_teams` (`id`, `invoice`, `user_id`, `joined_at`) VALUES
+(1, 'INV-081225-142615', 1, '2025-12-16 08:51:17'),
+(2, 'INV-091225-122637', 1, '2025-12-16 08:51:17'),
+(3, 'INV-091225-141449', 1, '2025-12-16 08:51:17'),
+(4, 'INV-091225-160606', 1, '2025-12-16 08:51:17'),
+(5, 'INV-091225-161752', 1, '2025-12-16 08:51:17'),
+(6, 'INV-081225-141602', 4, '2025-12-16 08:51:17'),
+(7, 'INV-091225-132406', 4, '2025-12-16 08:51:17'),
+(8, 'INV-091225-141104', 4, '2025-12-16 08:51:17'),
+(9, 'INV-161225-084224', 5, '2025-12-16 08:55:10'),
+(10, 'INV-161225-084224', 2, '2025-12-16 08:56:06');
 
 -- --------------------------------------------------------
 
@@ -464,7 +493,8 @@ CREATE TABLE `sparepart_keluar` (
 INSERT INTO `sparepart_keluar` (`id`, `tanggal_keluar`, `code_sparepart`, `nama_sparepart`, `satuan`, `jumlah`, `invoice_service`, `keterangan`) VALUES
 (18, '2025-12-08 14:17:11', 'SP-C-0001', NULL, NULL, 1, 'INV-081225-141602', 'Ditambahkan saat proses service'),
 (19, '2025-12-09 12:31:01', 'SP-C-0001', NULL, NULL, 1, 'INV-091225-122637', 'Ditambahkan saat proses service'),
-(20, '2025-12-09 12:31:04', 'LC-L-00001', NULL, NULL, 1, 'INV-091225-122637', 'Ditambahkan saat proses service');
+(20, '2025-12-09 12:31:04', 'LC-L-00001', NULL, NULL, 1, 'INV-091225-122637', 'Ditambahkan saat proses service'),
+(24, '2025-12-16 08:56:21', '02', NULL, NULL, 1, 'INV-161225-084224', 'Ditambahkan saat proses service');
 
 -- --------------------------------------------------------
 
@@ -703,6 +733,15 @@ ALTER TABLE `service`
   ADD KEY `voucher_id` (`voucher_id`);
 
 --
+-- Indexes for table `service_teams`
+--
+ALTER TABLE `service_teams`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_team` (`invoice`,`user_id`),
+  ADD KEY `idx_invoice` (`invoice`),
+  ADD KEY `idx_user` (`user_id`);
+
+--
 -- Indexes for table `sparepart`
 --
 ALTER TABLE `sparepart`
@@ -820,6 +859,12 @@ ALTER TABLE `qr_tokens`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
+-- AUTO_INCREMENT for table `service_teams`
+--
+ALTER TABLE `service_teams`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
 -- AUTO_INCREMENT for table `sparepart`
 --
 ALTER TABLE `sparepart`
@@ -829,7 +874,7 @@ ALTER TABLE `sparepart`
 -- AUTO_INCREMENT for table `sparepart_keluar`
 --
 ALTER TABLE `sparepart_keluar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `sparepart_masuk`
