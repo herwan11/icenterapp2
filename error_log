@@ -125,3 +125,19 @@ Stack trace:
 [09-Dec-2025 15:39:01 Asia/Jakarta] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/icey4741/public_html/app/includes/header.php:29) in /home/icey4741/public_html/app/generate_qr.php on line 117
 [09-Dec-2025 15:39:01 Asia/Jakarta] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/icey4741/public_html/app/includes/header.php:29) in /home/icey4741/public_html/app/generate_qr.php on line 117
 [09-Dec-2025 16:09:23 Asia/Jakarta] PHP Warning:  A non-numeric value encountered in /home/icey4741/public_html/app/add_sparepart_to_service.php on line 48
+[27-Dec-2025 15:48:25 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/all_data_service.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/all_data_service.php on line 9
+[27-Dec-2025 15:48:38 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/all_data_service.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/all_data_service.php on line 9
+[27-Dec-2025 15:48:48 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/all_data_service.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/all_data_service.php on line 9
+[27-Dec-2025 15:49:09 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on bool in /home/icey4741/public_html/app/all_data_service.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/icey4741/public_html/app/all_data_service.php on line 9

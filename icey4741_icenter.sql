@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 27, 2025 at 03:39 PM
+-- Generation Time: Jan 09, 2026 at 01:24 PM
 -- Server version: 11.4.9-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -42,7 +42,11 @@ CREATE TABLE `absensi` (
 
 INSERT INTO `absensi` (`id`, `user_id`, `tanggal`, `waktu_masuk`, `waktu_keluar`, `created_at`) VALUES
 (1, 6, '2025-12-09', '2025-12-09 15:42:42', '2025-12-09 15:48:59', '2025-12-09 08:42:42'),
-(2, 6, '2025-12-12', '2025-12-12 08:18:57', '2025-12-12 10:49:42', '2025-12-12 01:18:57');
+(2, 6, '2025-12-12', '2025-12-12 08:18:57', '2025-12-12 10:49:42', '2025-12-12 01:18:57'),
+(3, 4, '2025-12-30', '2025-12-30 19:18:19', NULL, '2025-12-30 12:18:19'),
+(4, 7, '2025-12-30', '2025-12-30 19:45:58', '2025-12-30 20:11:17', '2025-12-30 12:45:58'),
+(5, 8, '2025-12-30', '2025-12-30 20:03:23', '2025-12-30 20:03:53', '2025-12-30 13:03:23'),
+(6, 9, '2025-12-30', '2025-12-30 20:09:42', NULL, '2025-12-30 13:09:42');
 
 -- --------------------------------------------------------
 
@@ -105,7 +109,12 @@ CREATE TABLE `device_bindings` (
 --
 
 INSERT INTO `device_bindings` (`id`, `user_id`, `device_fingerprint`, `device_info`, `created_at`, `status`) VALUES
-(1, 6, '47174a11', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36 (Linux armv81)', '2025-12-09 08:40:57', 'aktif');
+(1, 6, '47174a11', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36 (Linux armv81)', '2025-12-09 08:40:57', 'aktif'),
+(2, 3, '72685a48', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1 (iPhone)', '2025-12-30 12:41:42', 'aktif'),
+(3, 4, '5556b24e', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36 (Linux armv81)', '2025-12-30 12:15:30', 'aktif'),
+(4, 7, '76c4b9cf', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1 (iPhone)', '2025-12-30 12:27:42', 'aktif'),
+(5, 8, '1d69a017', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1 (iPhone)', '2025-12-30 12:51:29', 'aktif'),
+(6, 9, '24d511cc', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1 (iPhone)', '2025-12-30 13:06:42', 'aktif');
 
 -- --------------------------------------------------------
 
@@ -178,7 +187,7 @@ CREATE TABLE `master_sparepart` (
 --
 
 INSERT INTO `master_sparepart` (`id`, `code_sparepart`, `nama`, `model`, `kategori`, `satuan`, `harga_beli`, `harga_jual`, `supplier_merek`, `stok_tersedia`, `stok_minimum`, `created_at`) VALUES
-(5, 'SP-C-0001', 'Kamera Depan', 'xxxxxx', 'Kamera Oppo', 'pcs', 50000.00, 70000.00, 'CV. Sparepart KW mas', 8, 5, '2025-12-02 09:00:23'),
+(5, 'SP-C-0001', 'Kamera Depan', 'xxxxxx', 'Kamera Oppo', 'pcs', 50000.00, 70000.00, 'CV. Sparepart KW mas', 13, 5, '2025-12-02 09:00:23'),
 (6, 'LC-L-00001', 'LCD iphone 13', 'awadaw LQ', 'LCD', 'pcs', 30000.00, 80000.00, 'CV. Sparepart KW mas', 9, 5, '2025-12-09 05:30:22'),
 (8, '02', 'ANU', 'AGAK LAIN', 'APA DI ???', 'PCS', 1000.00, 5000.00, 'CV. Sparepart KW mas', 19, 2, '2025-12-09 07:06:28');
 
@@ -201,10 +210,10 @@ CREATE TABLE `pelanggan` (
 --
 
 INSERT INTO `pelanggan` (`id`, `nama`, `no_hp`, `alamat`, `keluhan`) VALUES
-(1, 'Andi Saputra', '081234567890', 'Jl. Mawar No. 10', 'Laptop tidak bisa nyala'),
+(1, 'Andi Saputra', '08123456755555', 'Jl. Mawar No. 10', 'Laptop tidak bisa nyala'),
 (2, 'Budi Santoso', '081234567891', 'Jl. Melati No. 5', 'HP cepat panas'),
 (3, 'Citra Dewi', '081234567892', 'Jl. Anggrek No. 3', 'Ganti baterai iPhone'),
-(4, 'Hamka', '08123456789', 'dimana saja', 'HP tidak bisa rekam bokep'),
+(4, 'Hamka', '08123456780', 'dimana saja', 'HP tidak bisa rekam bokep'),
 (5, 'labaco', '082194486847', 'pangkep', 'Tidak bisa pinjol'),
 (6, 'ibu sisil', '12345', 'taumi', 'banyak seklai'),
 (8, 'BACO KUTTU', '00011111', 'DIMANA-MANA', 'MATI TOTAL');
@@ -371,7 +380,56 @@ INSERT INTO `qr_tokens` (`id`, `token`, `created_at`, `expires_at`, `is_used`) V
 (66, '6bd696df094095162d5cafca97e96ff0', 1765511381, 1765511416, 0),
 (67, 'd8707957acd6e4f894346a2fb334e45e', 1765524817, 1765524852, 0),
 (68, '324d37c02130f12bebef2cd01a2c53c4', 1765524848, 1765524883, 0),
-(69, '800af615bac09127f6a800717f20f342', 1765524885, 1765524920, 0);
+(69, '800af615bac09127f6a800717f20f342', 1765524885, 1765524920, 0),
+(70, '51bed308dbb5fa4dbc4f2e9042365dc0', 1767096809, 1767096844, 0),
+(71, '37195b1988c04d3f0fed67e1a8160ee0', 1767096840, 1767096875, 0),
+(72, 'aa0443427a428cfc0ad2ad86afb360db', 1767096869, 1767096904, 0),
+(73, '524720d0975c0fccff26b1dcd4d3ff12', 1767096899, 1767096934, 0),
+(74, '19f8992259a2b62ff003d71f33d3f690', 1767096929, 1767096964, 0),
+(75, '68eadad2be5891741d566cbba34fc177', 1767096959, 1767096994, 0),
+(76, '145856cea6e10f2ff0052cd61c524379', 1767096990, 1767097025, 0),
+(77, 'ec5f6560e6c5cebd9d5115b3144f78dc', 1767097021, 1767097056, 0),
+(78, '45fff47ed3fdf9fe80e5c899d3a73a39', 1767097051, 1767097086, 0),
+(79, '523524eff23670ac40629ddb45f72caa', 1767097081, 1767097116, 0),
+(80, '32ec3e70493f80282d10f8b29ebf58d3', 1767097097, 1767097132, 0),
+(81, 'a8d4f950bb15a4496b3e9646bc4557aa', 1767097127, 1767097162, 0),
+(82, 'f2d350a574e52e4c1c193e34488f67c8', 1767097700, 1767097735, 0),
+(83, 'cb3b2b06ab69e22c2df98eaab0429b1d', 1767097730, 1767097765, 0),
+(84, '82a96d7a7b90252a2954d717be0cbe42', 1767097760, 1767097795, 0),
+(85, '15f462b36b40e8c6ad57dd0600af2025', 1767097790, 1767097825, 0),
+(86, '510d1560865ebf483190901696ae94dc', 1767097820, 1767097855, 0),
+(87, '8cb74fb4ce91f00fc36a43125849134b', 1767097850, 1767097885, 0),
+(88, 'd482074849a89da26e9d6fe33dde7295', 1767097880, 1767097915, 0),
+(89, '510c180c08a95311ee7ea5c41c2f86fb', 1767097910, 1767097945, 0),
+(90, '7993109c4e8ffc839e237cf284fe059f', 1767097940, 1767097975, 0),
+(91, '14539f2035346cd1360b0a999921a6f9', 1767097970, 1767098005, 0),
+(92, '4e6e0b4846988ff5ac6e36519347570d', 1767098000, 1767098035, 0),
+(93, '1ee62c488f0b78fb740b5d8b2b2ef938', 1767098030, 1767098065, 0),
+(94, '28b35727cc0abe7abc64388fbff9014f', 1767098060, 1767098095, 0),
+(95, '852aead9196b4be67b4d3c27e86583be', 1767098090, 1767098125, 0),
+(96, 'db4780d5998b1ef92687338e304f7f7a', 1767098755, 1767098790, 0),
+(97, '0bde6e68b8a102291a1544b7cd27d445', 1767099787, 1767099822, 0),
+(98, 'ee2c0cd33e560f76862f2c03386de9dc', 1767099831, 1767099866, 0),
+(99, 'e31cef9052d87f6868fde3e7cdd21183', 1767100021, 1767100056, 0),
+(100, '97fea6839af4059e8e50593163e7a270', 1767100051, 1767100086, 0),
+(101, '6f9c046b5444850a8c0dfb07f5d1d649', 1767100081, 1767100116, 0),
+(102, 'd5b5a860ad5a7a4db0310ab5bfd8c2ea', 1767100112, 1767100147, 0),
+(103, 'd9d95cde91b5be4696b214086f1ada29', 1767100141, 1767100176, 0),
+(104, '38138274bf1b60db329feaf890add4d7', 1767100181, 1767100216, 0),
+(105, '9cfd7586e6d26caa8107d38848840806', 1767100204, 1767100239, 0),
+(106, '49834d3c14382deaf17ccfad8b668954', 1767100234, 1767100269, 0),
+(107, '106ef5ff16a8266c15d77c3143b6cbd4', 1767100264, 1767100299, 0),
+(108, 'a3813c85d7fd8afb53ec4733d7c5beff', 1767100265, 1767100300, 0),
+(109, '81129f93758752991fdcaf8e3d44a1b4', 1767100300, 1767100335, 0),
+(110, '87ef34c34377d1c714fbdc1f285267ab', 1767100325, 1767100360, 0),
+(111, '1528060ee6129bf75be37325628c1a84', 1767100355, 1767100390, 0),
+(112, 'fa53376e0a67f2782a932ec75c0fc8a5', 1767100385, 1767100420, 0),
+(113, '3a2c42fca4b43561d35c8250ce9e4889', 1767100415, 1767100450, 0),
+(114, '376c4e3f72af7f0003bad2337071a5de', 1767100445, 1767100480, 0),
+(115, '52204632c358fda7f5b093ec26f78e90', 1767100475, 1767100510, 0),
+(116, '6c68204dfcd6ef6ff2bd195f435ca806', 1767100505, 1767100540, 0),
+(117, 'e2645205ff420b565769a47cbf183bce', 1767100535, 1767100570, 0),
+(118, 'db3f4f05ff9d3575ba2eed5cfd600331', 1767100565, 1767100600, 0);
 
 -- --------------------------------------------------------
 
@@ -415,7 +473,7 @@ INSERT INTO `service` (`invoice`, `tanggal`, `kasir_id`, `merek_hp`, `tipe_hp`, 
 ('INV-091225-141449', '2025-12-09 14:18:17', 1, 'ODDO', 'ODDO 7', '00000111', 'MENINGGOI', 'UNIT', 1, 6, 'tidak', 'JANGAN DATANG LAGI', '60 Hari', 0.00, NULL, 1000000.00, 'cash', 'Lunas', 'Diambil', 0.00),
 ('INV-091225-160606', '2025-12-09 16:07:34', 1, 'APPLE', 'IPHONE 11', '00000', 'LAYAR PECAH', 'UNIT', 1, 6, 'ya', '', '0 Hari', 20000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 25000.00),
 ('INV-091225-161752', '2025-12-09 16:18:58', 1, 'ODDO', 'ODDO 7', '00000', 'TIDAK JELAS', 'UNIT', 1, 6, 'tidak', '', '0 Hari', 15000.00, NULL, 0.00, 'cash', 'Lunas', 'Diambil', 15000.00),
-('INV-161225-084224', '2025-12-16 08:43:02', 5, 'ipongggg', 'IP 15', '346346', 'sdsgg', 'ewgerhwa', 2, 6, 'tidak', 'wtwetwet', '0 Hari', 55000.00, NULL, 50000.00, 'cash', 'Lunas', 'Diambil', 5000.00);
+('INV-161225-084224', '2025-12-16 08:43:02', 5, 'ipongggg', 'IP 15', '346346', 'sdsgg', 'ewgerhwa', 2, 6, 'tidak', 'wtwetwet', '0 Hari', 55000.00, NULL, 50000.00, 'cash', 'Lunas', 'Selesai', 5000.00);
 
 -- --------------------------------------------------------
 
@@ -518,7 +576,8 @@ CREATE TABLE `sparepart_masuk` (
 INSERT INTO `sparepart_masuk` (`id`, `tanggal_masuk`, `code_sparepart`, `nama_sparepart`, `satuan`, `jumlah`) VALUES
 (2, '2025-12-02 16:00:56', 'SP-C-0001', NULL, NULL, 10),
 (3, '2025-12-09 12:30:42', 'LC-L-00001', NULL, NULL, 10),
-(4, '2025-12-09 14:08:21', '02', NULL, NULL, 10);
+(4, '2025-12-09 14:08:21', '02', NULL, NULL, 10),
+(5, '2025-12-30 19:58:08', 'SP-C-0001', NULL, NULL, 5);
 
 -- --------------------------------------------------------
 
@@ -618,7 +677,10 @@ INSERT INTO `users` (`id`, `nama`, `username`, `password`, `role`, `foto`, `qr_t
 (3, 'Tono Kasir', 'tono', 'admin123', 'Teknisi', NULL, 'b48f553417d12215e2be04d41ddb4639', '2025-08-07 07:45:56'),
 (4, 'Yuni Admin', 'yuni', 'admin123', 'Teknisi', NULL, 'b660114c355b5b01056f4d9410ed0fee', '2025-08-07 07:45:56'),
 (5, 'Owner Toko', 'owner', 'admin123', 'owner', NULL, '0854e029e4c391d9519af96134f5f88b', '2025-08-07 07:45:56'),
-(6, 'test', 'test', 'admin123', 'admin', NULL, 'b4ff5b253c6fa3ce9bc0d547f17ad5d3', '2025-12-09 08:20:18');
+(6, 'test', 'test', 'admin123', 'admin', NULL, 'b4ff5b253c6fa3ce9bc0d547f17ad5d3', '2025-12-09 08:20:18'),
+(7, 'Heriawan Kadir', 'heri', 'admin123', 'markom', 'assets/uploads/employees/EMP_6953c471b9d75.jpg', '8c4fb9f637e3c2da9fb5a5f59b196c94', '2025-12-30 12:24:17'),
+(8, 'Andi Irwansyah', 'Andy', 'Irwan05', 'teknisi', '', 'b0cf9f61c4a299768ea4991f24052fcd', '2025-12-30 12:47:19'),
+(9, 'Aryahadinata', 'Arya', '0511', 'admin', 'assets/uploads/employees/EMP_6953ce52bceec.png', '1f51daf2cc871c835bc99e2434bab526', '2025-12-30 13:06:26');
 
 -- --------------------------------------------------------
 
@@ -796,7 +858,7 @@ ALTER TABLE `vouchers`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `customers`
@@ -814,7 +876,7 @@ ALTER TABLE `detail_penjualan_sparepart`
 -- AUTO_INCREMENT for table `device_bindings`
 --
 ALTER TABLE `device_bindings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `karyawan`
@@ -856,7 +918,7 @@ ALTER TABLE `penjualan_sparepart`
 -- AUTO_INCREMENT for table `qr_tokens`
 --
 ALTER TABLE `qr_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
 
 --
 -- AUTO_INCREMENT for table `service_teams`
@@ -880,7 +942,7 @@ ALTER TABLE `sparepart_keluar`
 -- AUTO_INCREMENT for table `sparepart_masuk`
 --
 ALTER TABLE `sparepart_masuk`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `suplier`
@@ -898,7 +960,7 @@ ALTER TABLE `transaksi_kas`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `vouchers`
