@@ -2,7 +2,9 @@
 // employees.php
 require_once 'includes/header.php';
 
-$is_owner = (get_user_role() === 'owner');
+// Memastikan hanya Owner yang bisa melakukan modifikasi data
+// Menggunakan strtolower untuk menghindari masalah case-sensitivity dari database
+$is_owner = (strtolower(get_user_role()) === 'owner');
 $message = '';
 
 // --- FUNGSI UPLOAD FOTO ---
@@ -19,7 +21,7 @@ function upload_foto($file) {
     $check = getimagesize($file["tmp_name"]);
     if($check === false) return false;
     
-    // Hanya izinkan format tertentu
+    // Validasi format file
     if(!in_array($file_ext, ['jpg', 'png', 'jpeg'])) return false;
     
     if (move_uploaded_file($file["tmp_name"], $target_file)) {
@@ -28,49 +30,46 @@ function upload_foto($file) {
     return false;
 }
 
-// --- LOGIKA HAPUS (Hanya Owner) ---
+// --- LOGIKA HAPUS KARYAWAN (Hanya Owner) ---
 if ($is_owner && isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
     $id = intval($_GET['id']);
-    // Cegah hapus diri sendiri
+    // Keamanan: Cegah hapus akun sendiri
     if ($id == $_SESSION['user_id']) {
-        $message = "<div class='alert alert-danger'>Tidak dapat menghapus akun sendiri yang sedang login.</div>";
+        $message = "<div class='alert alert-danger'>Kesalahan: Anda tidak dapat menghapus akun Anda sendiri saat sedang login.</div>";
     } else {
         $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
-            $message = "<div class='alert alert-success'>Karyawan berhasil dihapus.</div>";
+            $message = "<div class='alert alert-success'>Data karyawan berhasil dihapus dari sistem.</div>";
         } else {
             $message = "<div class='alert alert-danger'>Gagal menghapus: " . $conn->error . "</div>";
         }
     }
 }
 
-// --- LOGIKA TAMBAH/EDIT (Hanya Owner) ---
+// --- LOGIKA SIMPAN DATA (TAMBAH/EDIT) ---
 if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama = $_POST['nama'];
     $username = $_POST['username'];
-    $password = $_POST['password']; // Jika kosong saat edit, password tidak berubah
+    $password = $_POST['password']; 
     $role = $_POST['role'];
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
     
-    // Generate QR Token jika baru
-    $qr_token = md5(uniqid($username, true));
-    
-    // Handle Upload Foto
+    // Handle File Foto Profil
     $foto_path = null;
     if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
         $foto_path = upload_foto($_FILES['foto']);
     }
 
     if ($id > 0) {
-        // UPDATE
+        // --- PROSES UPDATE ---
         $sql = "UPDATE users SET nama=?, username=?, role=?";
         $params = [$nama, $username, $role];
         $types = "sss";
         
         if (!empty($password)) {
             $sql .= ", password=?";
-            $params[] = $password; // Password plain text (sesuai sistem lama), idealnya hash
+            $params[] = $password;
             $types .= "s";
         }
         if ($foto_path) {
@@ -86,30 +85,31 @@ if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param($types, ...$params);
         if ($stmt->execute()) {
-            $message = "<div class='alert alert-success'>Data karyawan berhasil diperbarui.</div>";
+            $message = "<div class='alert alert-success'>Data '" . htmlspecialchars($nama) . "' berhasil diperbarui.</div>";
         }
         
     } else {
-        // INSERT
-        // Pastikan password diisi
+        // --- PROSES INSERT (Karyawan Baru) ---
         if (empty($password)) {
-            $message = "<div class='alert alert-danger'>Password wajib diisi untuk karyawan baru.</div>";
+            $message = "<div class='alert alert-danger'>Gagal: Password wajib diisi untuk pembuatan akun karyawan baru.</div>";
         } else {
+            // Generate QR Token unik untuk sistem ID Card Digital
+            $qr_token = md5(uniqid($username, true));
             $sql = "INSERT INTO users (nama, username, password, role, foto, qr_token) VALUES (?, ?, ?, ?, ?, ?)";
             $foto_db = $foto_path ? $foto_path : '';
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ssssss", $nama, $username, $password, $role, $foto_db, $qr_token);
             
             if ($stmt->execute()) {
-                $message = "<div class='alert alert-success'>Karyawan baru berhasil ditambahkan.</div>";
+                $message = "<div class='alert alert-success'>Karyawan baru '" . htmlspecialchars($nama) . "' berhasil ditambahkan ke database.</div>";
             } else {
-                $message = "<div class='alert alert-danger'>Gagal menambah: " . $conn->error . "</div>";
+                $message = "<div class='alert alert-danger'>Gagal menambahkan karyawan: " . $conn->error . "</div>";
             }
         }
     }
 }
 
-// --- AMBIL DATA KARYAWAN ---
+// --- PENGAMBILAN DATA KARYAWAN DARI DATABASE ---
 $users = [];
 $res = $conn->query("SELECT * FROM users ORDER BY role ASC, nama ASC");
 while($row = $res->fetch_assoc()) {
@@ -117,237 +117,257 @@ while($row = $res->fetch_assoc()) {
 }
 ?>
 
+<!-- CSS Internal untuk Halaman Karyawan -->
 <style>
-    .data-table-container { padding: 24px; }
-    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .data-table-container { padding: 24px; margin-top: 20px; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
-    .data-table th { background: #f8f9fa; font-weight: 600; color: #6c757d; }
+    .data-table th, .data-table td { padding: 14px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
+    .data-table th { font-weight: 600; color: #aaa; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
     
-    .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .role-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-    .role-owner { background: #000; color: #fff; }
-    .role-admin { background: var(--accent-primary); color: #fff; }
-    .role-teknisi { background: #e9ecef; color: #333; }
-    .role-karyawan { background: #e9ecef; color: #333; }
+    .avatar-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .role-badge { padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* Modal Styles */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .modal-content { background: #fff; width: 90%; max-width: 500px; border-radius: 16px; padding: 0; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; }
-    @keyframes slideUp { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-    .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; }
-    .modal-body { padding: 24px; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: #555; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+    /* Warna Badge Role Sesuai Struktur DB */
+    .role-owner { background: #ff4757; color: #fff; }
+    .role-admin { background: #2f3542; color: #fff; }
+    .role-teknisi { background: #1e90ff; color: #fff; }
+    .role-manager { background: #ffa502; color: #fff; }
+    .role-markom { background: #2ed573; color: #fff; }
+    .role-front-desk { background: #747d8c; color: #fff; }
     
-    .qr-preview-container { text-align: center; padding: 20px; }
-    .qr-preview-container h3 { font-size: 18px; margin-bottom: 5px; color: #333; }
-    .qr-preview-container p { color: #888; font-size: 13px; margin-bottom: 20px; }
-    #qrcode-display { display: flex; justify-content: center; margin: 20px auto; padding: 10px; background: white; border: 1px solid #eee; border-radius: 12px; width: fit-content; }
-    .btn-download-id { display: inline-block; margin-top: 15px; padding: 10px 20px; background: #000; color: white; border-radius: 20px; font-weight: 500; font-size: 13px; transition: transform 0.2s; }
-    .btn-download-id:hover { transform: scale(1.05); }
+    /* Desain Modal Modern */
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+    .modal-content { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); width: 95%; max-width: 500px; border-radius: 20px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.5); animation: zoomIn 0.3s ease; color: #fff; }
+    @keyframes zoomIn { from {transform: scale(0.9); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+    
+    .modal-header { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px 25px; border-top: 1px solid rgba(255,255,255,0.1); text-align: right; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 13px; color: #bbb; }
+    .form-control { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; transition: all 0.3s; }
+    .form-control:focus { outline: none; border-color: var(--accent-primary); background: rgba(255,255,255,0.1); }
+    
+    /* Perbaikan warna teks drop-down/select item menjadi hitam */
+    .form-control option { color: #000; background: #fff; }
+    
+    .close-modal { cursor: pointer; font-size: 24px; color: #888; transition: color 0.3s; }
+    .close-modal:hover { color: #fff; }
 </style>
 
-<!-- Library QRCode.js -->
+<!-- Library Pembuat QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<h1 class="page-title">Data Karyawan</h1>
+<div class="content-header">
+    <h1 class="page-title">Manajemen Karyawan</h1>
+    <p class="page-subtitle">Kelola akses dan data tim iCenter Apple</p>
+</div>
+
 <?php echo $message; ?>
 
 <div class="glass-effect data-table-container">
     <div class="table-header">
-        <h3>Daftar Pengguna Sistem</h3>
+        <h3>Database User Sistem</h3>
         <?php if($is_owner): ?>
-        <button class="btn btn-primary" onclick="openModal('employeeModal', 'add')"><i class="fas fa-plus"></i> Tambah Karyawan</button>
+        <button class="btn btn-primary" onclick="openEmployeeModal('add')">
+            <i class="fas fa-plus-circle"></i> Tambah Karyawan Baru
+        </button>
         <?php endif; ?>
     </div>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th width="60">Foto</th>
-                <th>Nama Lengkap</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th class="text-right">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach($users as $u): ?>
-            <tr>
-                <td>
-                    <?php if(!empty($u['foto']) && file_exists($u['foto'])): ?>
-                        <img src="<?php echo htmlspecialchars($u['foto']); ?>" class="avatar-small">
-                    <?php else: ?>
-                        <div class="avatar-small" style="background:#eee; display:flex; align-items:center; justify-content:center; color:#ccc;">
-                            <i class="fas fa-user"></i>
-                        </div>
-                    <?php endif; ?>
-                </td>
-                <td style="font-weight: 500;"><?php echo htmlspecialchars($u['nama']); ?></td>
-                <td><?php echo htmlspecialchars($u['username']); ?></td>
-                <td>
-                    <span class="role-badge role-<?php echo strtolower($u['role']); ?>">
-                        <?php echo ucfirst($u['role']); ?>
-                    </span>
-                </td>
-                <td class="text-right">
-                    <!-- Tombol Lihat (Semua Role) -->
-                    <button class="btn btn-tertiary btn-sm" onclick="showQR('<?php echo $u['nama']; ?>', '<?php echo $u['qr_token']; ?>')" title="Lihat ID Card">
-                        <i class="fas fa-eye"></i>
-                    </button>
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="80">Profil</th>
+                    <th>Nama Lengkap</th>
+                    <th>Username</th>
+                    <th>Hak Akses</th>
+                    <th class="text-right">Tindakan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($users as $u): ?>
+                <tr>
+                    <td>
+                        <?php if(!empty($u['foto']) && file_exists($u['foto'])): ?>
+                            <img src="<?php echo htmlspecialchars($u['foto']); ?>" class="avatar-small">
+                        <?php else: ?>
+                            <div class="avatar-small" style="background: rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#555;">
+                                <i class="fas fa-user-tie fa-lg"></i>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                    <!-- Warna teks nama tetap hitam (#000) sesuai permintaan sebelumnya -->
+                    <td style="font-weight: 600; color: #000;"><?php echo htmlspecialchars($u['nama']); ?></td>
+                    <td><code style="color: var(--accent-primary);"><?php echo htmlspecialchars($u['username']); ?></code></td>
+                    <td>
+                        <span class="role-badge role-<?php echo strtolower(str_replace(' ', '-', $u['role'])); ?>">
+                            <?php echo ucfirst($u['role']); ?>
+                        </span>
+                    </td>
+                    <td class="text-right">
+                        <!-- Fitur Lihat ID Card (Tersedia untuk semua level login) -->
+                        <button class="btn btn-tertiary btn-sm" onclick="showQRCard('<?php echo addslashes($u['nama']); ?>', '<?php echo $u['qr_token']; ?>')" title="Digital ID Card">
+                            <i class="fas fa-id-card"></i>
+                        </button>
 
-                    <!-- Tombol Edit & Hapus (Hanya Owner) -->
-                    <?php if($is_owner): ?>
-                        <button class="btn btn-tertiary btn-sm" onclick='editEmployee(<?php echo json_encode($u); ?>)' title="Edit">
-                            <i class="fas fa-edit" style="color: var(--accent-warning);"></i>
-                        </button>
-                        <button class="btn btn-tertiary btn-sm" onclick="deleteEmployee(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['nama']); ?>')" title="Hapus">
-                            <i class="fas fa-trash-alt" style="color: var(--accent-danger);"></i>
-                        </button>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+                        <?php if($is_owner): ?>
+                            <!-- Fitur Edit & Hapus (Khusus Owner) -->
+                            <button class="btn btn-tertiary btn-sm" onclick='editEmployeeData(<?php echo json_encode($u); ?>)' title="Ubah Data">
+                                <i class="fas fa-pen-nib" style="color: #ffa502;"></i>
+                            </button>
+                            <button class="btn btn-tertiary btn-sm" onclick="confirmDelete(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['nama']); ?>')" title="Hapus Akun">
+                                <i class="fas fa-user-minus" style="color: #ff4757;"></i>
+                            </button>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- MODAL FORM (ADD/EDIT) - HANYA MUNCUL VIA JS -->
+<!-- MODAL POP-UP: FORM TAMBAH/EDIT KARYAWAN -->
 <div id="employeeModal" class="modal">
     <div class="modal-content">
         <form method="POST" enctype="multipart/form-data">
             <div class="modal-header">
                 <h2 id="modalTitle">Tambah Karyawan</h2>
-                <button type="button" class="close-btn" onclick="closeModal('employeeModal')">&times;</button>
+                <span class="close-modal" onclick="closeModal('employeeModal')">&times;</span>
             </div>
             <div class="modal-body">
-                <input type="hidden" name="id" id="emp_id">
+                <input type="hidden" name="id" id="form_id">
                 
                 <div class="form-group">
                     <label>Nama Lengkap</label>
-                    <input type="text" name="nama" id="emp_nama" class="form-control" required>
+                    <input type="text" name="nama" id="form_nama" class="form-control" placeholder="Contoh: Heriawan Kadir" required>
                 </div>
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" name="username" id="emp_username" class="form-control" required>
+                    <input type="text" name="username" id="form_username" class="form-control" placeholder="Digunakan untuk login" required>
                 </div>
                 <div class="form-group">
-                    <label>Password <span id="pass_hint" style="font-weight:normal; color:#888; font-size:11px;">(Isi jika ingin mengubah)</span></label>
-                    <input type="password" name="password" class="form-control">
+                    <label>Kata Sandi <span id="pwd_hint" style="display:none; color:#f0932b; font-size:11px;">(Biarkan kosong jika tidak ingin diubah)</span></label>
+                    <input type="password" name="password" id="form_password" class="form-control" placeholder="Minimal 6 karakter">
                 </div>
                 <div class="form-group">
-                    <label>Role</label>
-                    <select name="role" id="emp_role" class="form-control">
-                        <option value="teknisi">Teknisi</option>
-                        <option value="admin">Admin</option>
-                        <option value="owner">Owner</option>
+                    <label>Jabatan / Role</label>
+                    <select name="role" id="form_role" class="form-control" required>
+                        <option value="Teknisi">Teknisi</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Front Desk">Front Desk</option>
+                        <option value="Markom">Markom</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Owner">Owner</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Foto Profil</label>
-                    <input type="file" name="foto" class="form-control" accept="image/*">
+                    <label>Foto Profil (Opsional)</label>
+                    <input type="file" name="foto" class="form-control" accept="image/jpeg,image/png">
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 20px; border-top: 1px solid #eee; text-align: right;">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('employeeModal')">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-tertiary" onclick="closeModal('employeeModal')">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- MODAL QR VIEW -->
-<div id="qrModal" class="modal">
+<!-- MODAL POP-UP: QR CODE ID CARD -->
+<div id="qrCardModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>ID Card Karyawan</h2>
-            <button type="button" class="close-btn" onclick="closeModal('qrModal')">&times;</button>
+            <h2>ID Card Digital</h2>
+            <span class="close-modal" onclick="closeModal('qrCardModal')">&times;</span>
         </div>
-        <div class="modal-body qr-preview-container">
-            <h3 id="qr_emp_name">Nama Karyawan</h3>
-            <p>Scan QR ini untuk melihat Digital ID Card</p>
+        <div class="modal-body" style="text-align: center; padding: 30px;">
+            <h3 id="display_emp_name" style="margin-bottom: 5px;">Nama Karyawan</h3>
+            <p style="color: #888; font-size: 13px; margin-bottom: 25px;">Scan QR ini melalui aplikasi iCenter untuk verifikasi absen</p>
             
-            <div id="qrcode-display"></div>
+            <div id="qrcode-box" style="display: inline-block; padding: 15px; background: #fff; border-radius: 15px; margin-bottom: 25px;"></div>
             
-            <?php if($is_owner): ?>
-            <a id="qr_link" href="#" target="_blank" class="btn-download-id">
-                <i class="fas fa-external-link-alt"></i> Buka ID Card Digital
+            <br>
+            <a id="id_card_link" href="#" target="_blank" class="btn btn-primary btn-sm">
+                <i class="fas fa-external-link-alt"></i> Tampilkan ID Card Full
             </a>
-            <?php endif; ?>
         </div>
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 
+<!-- Script untuk Interaksi Modal dan UI -->
 <script>
-    function openModal(id, mode) {
-        document.getElementById(id).style.display = 'flex';
-        if(id === 'employeeModal' && mode === 'add') {
-            document.getElementById('modalTitle').innerText = 'Tambah Karyawan';
-            document.getElementById('emp_id').value = '';
-            document.getElementById('emp_nama').value = '';
-            document.getElementById('emp_username').value = '';
-            document.getElementById('emp_role').value = 'teknisi';
-            document.getElementById('pass_hint').style.display = 'none';
+    function openEmployeeModal(mode) {
+        const modal = document.getElementById('employeeModal');
+        modal.style.display = 'flex';
+        
+        if(mode === 'add') {
+            document.getElementById('modalTitle').innerText = 'Tambah Karyawan Baru';
+            document.getElementById('form_id').value = '';
+            document.getElementById('form_nama').value = '';
+            document.getElementById('form_username').value = '';
+            document.getElementById('form_role').value = 'Teknisi';
+            document.getElementById('form_password').required = true;
+            document.getElementById('pwd_hint').style.display = 'none';
         }
+    }
+
+    function editEmployeeData(data) {
+        openEmployeeModal('edit');
+        document.getElementById('modalTitle').innerText = 'Ubah Data Karyawan';
+        document.getElementById('form_id').value = data.id;
+        document.getElementById('form_nama').value = data.nama;
+        document.getElementById('form_username').value = data.username;
+        document.getElementById('form_role').value = data.role;
+        document.getElementById('form_password').required = false;
+        document.getElementById('pwd_hint').style.display = 'block';
     }
 
     function closeModal(id) {
         document.getElementById(id).style.display = 'none';
     }
 
-    function editEmployee(data) {
-        openModal('employeeModal', 'edit');
-        document.getElementById('modalTitle').innerText = 'Edit Data Karyawan';
-        document.getElementById('emp_id').value = data.id;
-        document.getElementById('emp_nama').value = data.nama;
-        document.getElementById('emp_username').value = data.username;
-        document.getElementById('emp_role').value = data.role;
-        document.getElementById('pass_hint').style.display = 'inline';
-    }
-
-    function deleteEmployee(id, nama) {
-        if(confirm('Yakin ingin menghapus karyawan "' + nama + '"?')) {
+    function confirmDelete(id, nama) {
+        if(confirm('Hapus data karyawan "' + nama + '"? Tindakan ini tidak dapat dibatalkan.')) {
             window.location.href = 'employees.php?action=delete&id=' + id;
         }
     }
 
-    function showQR(nama, token) {
-        if(!token) {
-            alert('User ini belum memiliki token QR. Silakan edit dan simpan ulang user ini.');
+    function showQRCard(nama, token) {
+        if(!token || token === '') {
+            alert('Token QR belum dibuat. Silakan edit dan simpan kembali user ini untuk mengaktifkan ID Card.');
             return;
         }
-        openModal('qrModal');
-        document.getElementById('qr_emp_name').innerText = nama;
         
-        // Link menuju halaman ID Card
-        // Asumsi file ada di root dengan nama view_id_card.php
+        document.getElementById('qrCardModal').style.display = 'flex';
+        document.getElementById('display_emp_name').innerText = nama;
+        
         const baseUrl = window.location.origin + window.location.pathname.replace('employees.php', '');
         const targetUrl = baseUrl + 'view_id_card.php?token=' + token;
         
-        // Cek jika elemen ada (hanya ada jika owner) sebelum set href
-        const btnLink = document.getElementById('qr_link');
-        if(btnLink) {
-            btnLink.href = targetUrl;
-        }
+        document.getElementById('id_card_link').href = targetUrl;
         
-        // Generate QR
-        document.getElementById('qrcode-display').innerHTML = '';
-        new QRCode(document.getElementById("qrcode-display"), {
+        const qrContainer = document.getElementById('qrcode-box');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
             text: targetUrl,
-            width: 180,
-            height: 180,
+            width: 200,
+            height: 200,
             colorDark : "#000000",
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
     }
 
-    // Close on click outside
-    window.onclick = function(e) {
-        if(e.target.classList.contains('modal')) e.target.style.display = 'none';
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
     }
 </script>
