@@ -1,5 +1,6 @@
 <?php
 // employees.php
+// Baseline: iCenter Apple Repository - Glassmorphism Style
 require_once 'includes/header.php';
 
 $is_owner = (get_user_role() === 'owner');
@@ -49,14 +50,12 @@ if ($is_owner && isset($_GET['action']) && $_GET['action'] == 'delete' && isset(
 if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama = $_POST['nama'];
     $username = $_POST['username'];
-    $password = $_POST['password']; // Jika kosong saat edit, password tidak berubah
+    $password = $_POST['password']; 
     $role = $_POST['role'];
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
     
-    // Generate QR Token jika baru
     $qr_token = md5(uniqid($username, true));
     
-    // Handle Upload Foto
     $foto_path = null;
     if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
         $foto_path = upload_foto($_FILES['foto']);
@@ -70,7 +69,7 @@ if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (!empty($password)) {
             $sql .= ", password=?";
-            $params[] = $password; // Password plain text (sesuai sistem lama), idealnya hash
+            $params[] = $password; 
             $types .= "s";
         }
         if ($foto_path) {
@@ -91,7 +90,6 @@ if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
         
     } else {
         // INSERT
-        // Pastikan password diisi
         if (empty($password)) {
             $message = "<div class='alert alert-danger'>Password wajib diisi untuk karyawan baru.</div>";
         } else {
@@ -117,6 +115,7 @@ while($row = $res->fetch_assoc()) {
 }
 ?>
 
+<!-- Style tetap menggunakan baseline glassmorphism -->
 <style>
     .data-table-container { padding: 24px; }
     .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -130,6 +129,7 @@ while($row = $res->fetch_assoc()) {
     .role-admin { background: var(--accent-primary); color: #fff; }
     .role-teknisi { background: #e9ecef; color: #333; }
     .role-karyawan { background: #e9ecef; color: #333; }
+    .role-markom { background: #ffc107; color: #000; }
     
     /* Modal Styles */
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -140,13 +140,6 @@ while($row = $res->fetch_assoc()) {
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: #555; }
     .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-    
-    .qr-preview-container { text-align: center; padding: 20px; }
-    .qr-preview-container h3 { font-size: 18px; margin-bottom: 5px; color: #333; }
-    .qr-preview-container p { color: #888; font-size: 13px; margin-bottom: 20px; }
-    #qrcode-display { display: flex; justify-content: center; margin: 20px auto; padding: 10px; background: white; border: 1px solid #eee; border-radius: 12px; width: fit-content; }
-    .btn-download-id { display: inline-block; margin-top: 15px; padding: 10px 20px; background: #000; color: white; border-radius: 20px; font-weight: 500; font-size: 13px; transition: transform 0.2s; }
-    .btn-download-id:hover { transform: scale(1.05); }
 </style>
 
 <!-- Library QRCode.js -->
@@ -158,9 +151,12 @@ while($row = $res->fetch_assoc()) {
 <div class="glass-effect data-table-container">
     <div class="table-header">
         <h3>Daftar Pengguna Sistem</h3>
-        <?php if($is_owner): ?>
-        <button class="btn btn-primary" onclick="openModal('employeeModal', 'add')"><i class="fas fa-plus"></i> Tambah Karyawan</button>
-        <?php endif; ?>
+        <div class="d-flex" style="gap: 10px;">
+            <a href="digital_karyawan.php" class="btn btn-secondary"><i class="fas fa-user-tie"></i> Digital Karyawan</a>
+            <?php if($is_owner): ?>
+            <button class="btn btn-primary" onclick="openModal('employeeModal', 'add')"><i class="fas fa-plus"></i> Tambah Karyawan</button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <table class="data-table">
@@ -193,12 +189,10 @@ while($row = $res->fetch_assoc()) {
                     </span>
                 </td>
                 <td class="text-right">
-                    <!-- Tombol Lihat (Semua Role) -->
                     <button class="btn btn-tertiary btn-sm" onclick="showQR('<?php echo $u['nama']; ?>', '<?php echo $u['qr_token']; ?>')" title="Lihat ID Card">
                         <i class="fas fa-eye"></i>
                     </button>
 
-                    <!-- Tombol Edit & Hapus (Hanya Owner) -->
                     <?php if($is_owner): ?>
                         <button class="btn btn-tertiary btn-sm" onclick='editEmployee(<?php echo json_encode($u); ?>)' title="Edit">
                             <i class="fas fa-edit" style="color: var(--accent-warning);"></i>
@@ -214,7 +208,7 @@ while($row = $res->fetch_assoc()) {
     </table>
 </div>
 
-<!-- MODAL FORM (ADD/EDIT) - HANYA MUNCUL VIA JS -->
+<!-- MODAL FORM (ADD/EDIT) -->
 <div id="employeeModal" class="modal">
     <div class="modal-content">
         <form method="POST" enctype="multipart/form-data">
@@ -243,6 +237,7 @@ while($row = $res->fetch_assoc()) {
                         <option value="teknisi">Teknisi</option>
                         <option value="admin">Admin</option>
                         <option value="owner">Owner</option>
+                        <option value="markom">Markom</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -268,9 +263,7 @@ while($row = $res->fetch_assoc()) {
         <div class="modal-body qr-preview-container">
             <h3 id="qr_emp_name">Nama Karyawan</h3>
             <p>Scan QR ini untuk melihat Digital ID Card</p>
-            
             <div id="qrcode-display"></div>
-            
             <?php if($is_owner): ?>
             <a id="qr_link" href="#" target="_blank" class="btn-download-id">
                 <i class="fas fa-external-link-alt"></i> Buka ID Card Digital
@@ -322,19 +315,10 @@ while($row = $res->fetch_assoc()) {
         }
         openModal('qrModal');
         document.getElementById('qr_emp_name').innerText = nama;
-        
-        // Link menuju halaman ID Card
-        // Asumsi file ada di root dengan nama view_id_card.php
         const baseUrl = window.location.origin + window.location.pathname.replace('employees.php', '');
         const targetUrl = baseUrl + 'view_id_card.php?token=' + token;
-        
-        // Cek jika elemen ada (hanya ada jika owner) sebelum set href
         const btnLink = document.getElementById('qr_link');
-        if(btnLink) {
-            btnLink.href = targetUrl;
-        }
-        
-        // Generate QR
+        if(btnLink) btnLink.href = targetUrl;
         document.getElementById('qrcode-display').innerHTML = '';
         new QRCode(document.getElementById("qrcode-display"), {
             text: targetUrl,
@@ -346,7 +330,6 @@ while($row = $res->fetch_assoc()) {
         });
     }
 
-    // Close on click outside
     window.onclick = function(e) {
         if(e.target.classList.contains('modal')) e.target.style.display = 'none';
     }
