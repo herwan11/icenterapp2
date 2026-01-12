@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 09, 2026 at 01:24 PM
+-- Generation Time: Jan 12, 2026 at 11:00 AM
 -- Server version: 11.4.9-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -661,7 +661,7 @@ CREATE TABLE `users` (
   `nama` varchar(100) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
   `password` text DEFAULT NULL,
-  `role` varchar(20) DEFAULT NULL,
+  `role` enum('Admin','Teknisi','Front Desk','Markom','Manager','Owner') NOT NULL,
   `foto` varchar(255) DEFAULT NULL,
   `qr_token` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
@@ -672,15 +672,17 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `nama`, `username`, `password`, `role`, `foto`, `qr_token`, `created_at`) VALUES
-(1, 'Admin Utama', 'admin', 'admin123', 'admin', 'assets/uploads/employees/EMP_693b917c47f4c.png', 'b413aa72ecb7c649a3379970751f6e0b', '2025-08-07 07:45:56'),
+(1, 'Admin Utama', 'admin', 'admin123', 'Admin', 'assets/uploads/employees/EMP_693b917c47f4c.png', 'b413aa72ecb7c649a3379970751f6e0b', '2025-08-07 07:45:56'),
 (2, 'Rian Teknisi', 'rian', 'admin123', 'Teknisi', NULL, '80ee34c2a24ebc75f38a2149c6581835', '2025-08-07 07:45:56'),
 (3, 'Tono Kasir', 'tono', 'admin123', 'Teknisi', NULL, 'b48f553417d12215e2be04d41ddb4639', '2025-08-07 07:45:56'),
 (4, 'Yuni Admin', 'yuni', 'admin123', 'Teknisi', NULL, 'b660114c355b5b01056f4d9410ed0fee', '2025-08-07 07:45:56'),
-(5, 'Owner Toko', 'owner', 'admin123', 'owner', NULL, '0854e029e4c391d9519af96134f5f88b', '2025-08-07 07:45:56'),
-(6, 'test', 'test', 'admin123', 'admin', NULL, 'b4ff5b253c6fa3ce9bc0d547f17ad5d3', '2025-12-09 08:20:18'),
-(7, 'Heriawan Kadir', 'heri', 'admin123', 'markom', 'assets/uploads/employees/EMP_6953c471b9d75.jpg', '8c4fb9f637e3c2da9fb5a5f59b196c94', '2025-12-30 12:24:17'),
-(8, 'Andi Irwansyah', 'Andy', 'Irwan05', 'teknisi', '', 'b0cf9f61c4a299768ea4991f24052fcd', '2025-12-30 12:47:19'),
-(9, 'Aryahadinata', 'Arya', '0511', 'admin', 'assets/uploads/employees/EMP_6953ce52bceec.png', '1f51daf2cc871c835bc99e2434bab526', '2025-12-30 13:06:26');
+(5, 'Owner Toko', 'owner', 'admin123', 'Owner', NULL, '0854e029e4c391d9519af96134f5f88b', '2025-08-07 07:45:56'),
+(6, 'test', 'test', 'admin123', 'Admin', NULL, 'b4ff5b253c6fa3ce9bc0d547f17ad5d3', '2025-12-09 08:20:18'),
+(7, 'Heriawan Kadir', 'heri', 'admin123', 'Markom', 'assets/uploads/employees/EMP_6953c471b9d75.jpg', '8c4fb9f637e3c2da9fb5a5f59b196c94', '2025-12-30 12:24:17'),
+(8, 'Andi Irwansyah', 'Andy', 'Irwan05', 'Teknisi', '', 'b0cf9f61c4a299768ea4991f24052fcd', '2025-12-30 12:47:19'),
+(9, 'Aryahadinata', 'Arya', '0511', 'Admin', 'assets/uploads/employees/EMP_6953ce52bceec.png', '1f51daf2cc871c835bc99e2434bab526', '2025-12-30 13:06:26'),
+(10, 'ery', 'sge', 'wegerhsers', 'Owner', '', '96243c2a3ada8485effaf59bb70de507', '2026-01-09 06:45:25'),
+(12, 'LCD iphone 13', 'qqqqqqq', 'qqqqqqqq', 'Owner', '', '7f34aa591343361ed519a08b2e11f0f4', '2026-01-09 06:46:10');
 
 -- --------------------------------------------------------
 
@@ -960,7 +962,7 @@ ALTER TABLE `transaksi_kas`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `vouchers`
